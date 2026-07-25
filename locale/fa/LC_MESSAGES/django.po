@@ -1,0 +1,238 @@
+# Persian translations for django-ecosystem.
+# Copyright (C) 2026 Ecosystem Contributors
+# This file is distributed under the same license as the django-ecosystem package.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: django-ecosystem 1.1.1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-07-25 15:04+0330\n"
+"PO-Revision-Date: 2026-07-25 15:10+0330\n"
+"Last-Translator: Ecosystem Contributors\n"
+"Language-Team: Persian\n"
+"Language: fa\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#: admin.py:45
+msgid "Service"
+msgstr "سرویس"
+
+#: admin.py:49
+msgid "Basic details visitors see when this service is listed."
+msgstr "اطلاعات پایه‌ای که هنگام نمایش این سرویس به بازدیدکنندگان نشان داده می‌شود."
+
+#: admin.py:54 forms.py:103
+msgid "Placement"
+msgstr "محل نمایش"
+
+#: admin.py:58
+msgid ""
+"Control where the service appears and whether it is visible. Placement keys "
+"must match the value passed to the ecosystem template tag."
+msgstr ""
+"محل نمایش سرویس و وضعیت نمایش آن را تنظیم کنید. کلید محل نمایش باید با "
+"مقدار ارسال‌شده به تگ قالب اکوسیستم یکسان باشد."
+
+#: admin.py:65 admin.py:99
+msgid "Logo"
+msgstr "لوگو"
+
+#: admin.py:69
+msgid ""
+"Optional image shown next to the service name. Save the form to refresh the "
+"preview after uploading."
+msgstr ""
+"تصویر اختیاری که کنار نام سرویس نمایش داده می‌شود. پس از بارگذاری، فرم را "
+"ذخیره کنید تا پیش‌نمایش به‌روز شود."
+
+#: admin.py:75
+msgid "Link behavior"
+msgstr "رفتار پیوند"
+
+#: admin.py:81
+msgid "Advanced"
+msgstr "پیشرفته"
+
+#: admin.py:86
+msgid "Technical identifiers. Most editors can leave these alone."
+msgstr "شناسه‌های فنی. بیشتر ویرایشگران نیازی به تغییر این بخش ندارند."
+
+#: admin.py:91
+msgid "Timestamps"
+msgstr "زمان‌ها"
+
+#: admin.py:104
+msgid "Logo preview"
+msgstr "پیش‌نمایش لوگو"
+
+#: admin.py:134
+msgid "Activate selected services"
+msgstr "فعال‌سازی سرویس‌های انتخاب‌شده"
+
+#: admin.py:144
+#, python-format
+msgid "%d service was activated."
+msgid_plural "%d services were activated."
+msgstr[0] "%d سرویس فعال شد."
+msgstr[1] "%d سرویس فعال شدند."
+
+#: admin.py:152
+msgid "Deactivate selected services"
+msgstr "غیرفعال‌سازی سرویس‌های انتخاب‌شده"
+
+#: admin.py:162
+#, python-format
+msgid "%d service was deactivated."
+msgid_plural "%d services were deactivated."
+msgstr[0] "%d سرویس غیرفعال شد."
+msgstr[1] "%d سرویس غیرفعال شدند."
+
+#: apps.py:15
+msgid "Ecosystem"
+msgstr "اکوسیستم"
+
+#: forms.py:98
+msgid ""
+"Choose where this service appears on the site. Pick a known placement from "
+"the suggestions, or type a new key that matches the location argument in the "
+"template tag (example key: \"footer\")."
+msgstr ""
+"محل نمایش این سرویس در سایت را انتخاب کنید. یکی از پیشنهادها را برگزینید، "
+"یا کلید جدیدی وارد کنید که با آرگومان محل در تگ قالب مطابقت داشته باشد "
+"(نمونه کلید: «footer»)."
+
+#: forms.py:106 models.py:29
+msgid ""
+"Short label visitors and editors will recognize (for example \"Academy\" or "
+"\"Shop\")."
+msgstr ""
+"برچسب کوتاهی که بازدیدکنندگان و ویرایشگران آن را می‌شناسند (مثلاً «آکادمی» یا "
+"«فروشگاه»)."
+
+#: forms.py:110 models.py:62
+msgid ""
+"Full web address, including https:// (for example https://"
+"academy.example.com)."
+msgstr ""
+"آدرس کامل وب، شامل https:// (مثلاً https://academy.example.com)."
+
+#: forms.py:114 models.py:47
+msgid "Optional notes for your team. Not shown on the site by default."
+msgstr "یادداشت‌های اختیاری برای تیم شما. به‌طور پیش‌فرض در سایت نمایش داده نمی‌شود."
+
+#: forms.py:117
+msgid ""
+"Optional square or wide image. Prefer PNG or SVG-compatible raster logos "
+"with a transparent background."
+msgstr ""
+"تصویر مربعی یا عریض اختیاری. ترجیحاً لوگوی PNG یا رستری سازگار با SVG با "
+"پس‌زمینه شفاف."
+
+#: forms.py:121
+msgid ""
+"Internal unique ID. Leave blank to generate from the name; change only if "
+"you know why you need a stable custom value."
+msgstr ""
+"شناسه یکتای داخلی. برای تولید خودکار از روی نام، خالی بگذارید؛ فقط در صورتی "
+"تغییر دهید که به مقدار سفارشی پایدار نیاز دارید."
+
+#: forms.py:125
+msgid ""
+"Controls the order within the same placement. Smaller numbers appear first "
+"(0, 1, 2, …)."
+msgstr ""
+"ترتیب نمایش در یک محل را کنترل می‌کند. عددهای کوچک‌تر زودتر نمایش داده می‌شوند "
+"(۰، ۱، ۲، …)."
+
+#: forms.py:129 models.py:87
+msgid "Uncheck to hide this service everywhere without deleting it."
+msgstr "برای پنهان کردن این سرویس در همه جا بدون حذف آن، تیک را بردارید."
+
+#: forms.py:132 models.py:93
+msgid "When checked, the link opens in a new browser tab."
+msgstr "در صورت فعال بودن، پیوند در زبانه جدید مرورگر باز می‌شود."
+
+#: models.py:26
+msgid "name"
+msgstr "نام"
+
+#: models.py:34
+msgid "slug"
+msgstr "نامک"
+
+#: models.py:39
+msgid ""
+"Internal unique ID. Leave blank to generate from the name; existing values "
+"are kept when the name changes."
+msgstr ""
+"شناسه یکتای داخلی. برای تولید خودکار از روی نام، خالی بگذارید؛ با تغییر نام، "
+"مقدار موجود حفظ می‌شود."
+
+#: models.py:44
+msgid "description"
+msgstr "توضیحات"
+
+#: models.py:51
+msgid "logo"
+msgstr "لوگو"
+
+#: models.py:55
+msgid ""
+"Optional image shown next to the service name (stored under MEDIA_ROOT/"
+"ecosystem/services/)."
+msgstr ""
+"تصویر اختیاری کنار نام سرویس (در MEDIA_ROOT/ecosystem/services/ ذخیره می‌شود)."
+
+#: models.py:60
+msgid "URL"
+msgstr "آدرس"
+
+#: models.py:67
+msgid "location"
+msgstr "محل نمایش"
+
+#: models.py:70
+msgid ""
+"Placement key matched exactly by the template tag. Prefer choosing a known "
+"key in admin; new keys stay allowed (examples: \"footer\", \"pricing_page\")."
+msgstr ""
+"کلید محل نمایش که تگ قالب دقیقاً با آن مطابقت می‌دهد. ترجیحاً یکی از کلیدهای "
+"آشنا را در ادمین انتخاب کنید؛ کلیدهای جدید همچنان مجازند (نمونه: «footer»، "
+"«pricing_page»)."
+
+#: models.py:76
+msgid "display order"
+msgstr "ترتیب نمایش"
+
+#: models.py:79
+msgid ""
+"Controls the order within the same placement. Smaller numbers appear first."
+msgstr ""
+"ترتیب نمایش در یک محل را کنترل می‌کند. عددهای کوچک‌تر زودتر نمایش داده می‌شوند."
+
+#: models.py:84
+msgid "active"
+msgstr "فعال"
+
+#: models.py:91
+msgid "open in new tab"
+msgstr "باز شدن در زبانه جدید"
+
+#: models.py:95
+msgid "created at"
+msgstr "ایجاد شده در"
+
+#: models.py:96
+msgid "updated at"
+msgstr "به‌روزرسانی شده در"
+
+#: models.py:99
+msgid "service"
+msgstr "سرویس"
+
+#: models.py:100
+msgid "services"
+msgstr "سرویس‌ها"

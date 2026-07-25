@@ -1,0 +1,16 @@
+<ul class="ecosystem-services">
+  {% for service in services %}
+    <li class="ecosystem-service">
+      <a
+        href="{{ service.url }}"
+        {% if service.open_in_new_tab %}target="_blank" rel="noopener noreferrer"{% endif %}
+      >
+        {% if service.logo %}
+          <img src="{{ service.logo.url }}" alt="{{ service.name }}">
+        {% endif %}
+        <span>{{ service.name }}</span>
+      </a>
+    </li>
+  {% empty %}
+  {% endfor %}
+</ul>

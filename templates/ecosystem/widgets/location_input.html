@@ -1,0 +1,8 @@
+<input type="{{ widget.type }}" name="{{ widget.name }}"{% if widget.value != None %} value="{{ widget.value|stringformat:'s' }}"{% endif %}{% include "django/forms/widgets/attrs.html" %}>
+{% if suggestions %}
+<datalist id="{{ datalist_id }}">
+  {% for key, label in suggestions %}
+    <option value="{{ key }}"{% if label and label != key %} label="{{ label }}"{% endif %}></option>
+  {% endfor %}
+</datalist>
+{% endif %}
