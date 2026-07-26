@@ -3,14 +3,15 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "django-ecosystem"
+name = "ecosystem"
 version = "1.1.1"
 description = "Reusable Django app for managing and rendering ecosystem services."
 readme = "README.md"
-requires-python = ">=3.12"
-license = { text = "MIT" }
+requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE"]
 authors = [
-    { name = "Ecosystem Contributors" },
+    { name = "sobhanx" },
 ]
 keywords = ["django", "ecosystem", "services", "navigation"]
 classifiers = [
@@ -19,10 +20,11 @@ classifiers = [
     "Framework :: Django",
     "Framework :: Django :: 5.2",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Topic :: Internet :: WWW/HTTP",
@@ -33,18 +35,20 @@ dependencies = [
     "Pillow>=10.0",
 ]
 
-[project.optional-dependencies]
-test = [
-    "Django>=5.2",
-    "Pillow>=10.0",
-]
+[tool.setuptools]
+packages = ["ecosystem", "ecosystem.migrations", "ecosystem.templatetags"]
 
-[tool.setuptools.packages.find]
-include = ["ecosystem*"]
+[tool.setuptools.package-dir]
+ecosystem = "."
+"ecosystem.migrations" = "migrations"
+"ecosystem.templatetags" = "templatetags"
 
 [tool.setuptools.package-data]
 ecosystem = [
     "templates/**/*",
-    "static/**/*",
     "locale/**/*",
 ]
+
+[project.urls]
+Homepage = "https://github.com/sobhanx/ecosystem"
+Repository = "https://github.com/sobhanx/ecosystem"

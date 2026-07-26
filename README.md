@@ -166,7 +166,6 @@ With `LANGUAGE_CODE = "fa"` (and `USE_I18N = True`), Django Admin shows Persian
 strings from this app. English message IDs remain the fallback for other
 languages.
 
-
 All rendering lookups go through `ecosystem.services.get_active_services()`.
 Template tags call that helper; do not duplicate `active`/`location` filters in
 host code if you want consistent behavior.
@@ -174,37 +173,37 @@ host code if you want consistent behavior.
 ## Project structure
 
 ```text
-ecosystem/
-  apps.py                 # AppConfig
-  models.py               # Service model
-  forms.py                # Admin form + location suggestions widget
-  admin.py                # Django Admin
-  services.py             # Shared queryset helpers
+ecosystem/                  # repository root (importable Django app)
+  apps.py                   # AppConfig
+  models.py                 # Service model
+  forms.py                  # Admin form + location suggestions widget
+  admin.py                  # Django Admin
+  services.py               # Shared queryset helpers
   locale/
     fa/LC_MESSAGES/
       django.po             # Persian translations (source)
       django.mo             # Compiled catalog
   templatetags/
-    ecosystem.py          # {% ecosystem %} / legacy alias
+    ecosystem.py            # {% ecosystem %} / legacy alias
   templates/
     ecosystem/
-      services.html       # Default inclusion template (overridable)
+      services.html         # Default inclusion template (overridable)
       widgets/
         location_input.html
-  static/
-    ecosystem/            # Reserved for future assets
   migrations/
-  views.py                # Empty in v1 (no public views)
-  urls.py                 # Empty urlpatterns (app_name = "ecosystem")
-  tests.py
+  views.py                  # No public views (template-tag rendering only)
+  urls.py                   # Empty urlpatterns (app_name = "ecosystem")
+  tests/                    # Package test suite (not installed)
+  scripts/
+    runtests.py             # Standalone test runner
 ```
 
 ## Running package tests
 
-From the package root:
+From the repository root:
 
 ```bash
-python runtests.py
+python scripts/runtests.py
 ```
 
 ## License

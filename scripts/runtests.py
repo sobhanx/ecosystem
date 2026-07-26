@@ -12,9 +12,11 @@ def main() -> None:
     import django
     from django.conf import settings
 
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-    # Package lives at <parent>/ecosystem/; parent must be on sys.path.
-    sys.path.insert(0, os.path.dirname(base_dir))
+    repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    # The importable package directory is named ``ecosystem``; its parent must
+    # be on ``sys.path`` (for example ``/path/to/work/ecosystem`` → add
+    # ``/path/to/work``).
+    sys.path.insert(0, os.path.dirname(repo_root))
 
     if not settings.configured:
         settings.configure(
@@ -63,7 +65,7 @@ def main() -> None:
             USE_TZ=True,
             STATIC_URL="/static/",
             MEDIA_URL="/media/",
-            MEDIA_ROOT=os.path.join(base_dir, "media"),
+            MEDIA_ROOT=os.path.join(repo_root, "media"),
             DEFAULT_AUTO_FIELD="django.db.models.BigAutoField",
         )
 
@@ -71,7 +73,7 @@ def main() -> None:
 
     from django.core.management import call_command
 
-    call_command("test", "ecosystem", verbosity=2)
+    call_command("test", "tests", verbosity=2)
 
 
 if __name__ == "__main__":

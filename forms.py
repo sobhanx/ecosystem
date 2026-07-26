@@ -102,17 +102,7 @@ class ServiceAdminForm(forms.ModelForm):
         )
         location.label = _("Placement")
 
-        self.fields["name"].help_text = _(
-            'Short label visitors and editors will recognize '
-            '(for example "Academy" or "Shop").'
-        )
-        self.fields["url"].help_text = _(
-            "Full web address, including https:// "
-            "(for example https://academy.example.com)."
-        )
-        self.fields["description"].help_text = _(
-            "Optional notes for your team. Not shown on the site by default."
-        )
+        # Admin-only help text; other fields inherit ``help_text`` from the model.
         self.fields["logo"].help_text = _(
             "Optional square or wide image. Prefer PNG or SVG-compatible "
             "raster logos with a transparent background."
@@ -124,10 +114,4 @@ class ServiceAdminForm(forms.ModelForm):
         self.fields["display_order"].help_text = _(
             "Controls the order within the same placement. "
             "Smaller numbers appear first (0, 1, 2, …)."
-        )
-        self.fields["active"].help_text = _(
-            "Uncheck to hide this service everywhere without deleting it."
-        )
-        self.fields["open_in_new_tab"].help_text = _(
-            "When checked, the link opens in a new browser tab."
         )
