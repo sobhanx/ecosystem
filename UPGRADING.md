@@ -8,7 +8,7 @@ This package follows [Semantic Versioning](https://semver.org/):
 - **MINOR** — backward-compatible hardening and features
 - **PATCH** — backward-compatible bug fixes
 
-Pin hosts to an exact version (for example `ecosystem==2.2.0`) when installing
+Pin hosts to an exact version (for example `ecosystem==2.2.1`) when installing
 from an internal index or path. After each release, install from a freshly built
 wheel — do not reuse stale `dist/` artifacts from older checkouts.
 
@@ -28,6 +28,18 @@ Follow [DEVELOPMENT.md](DEVELOPMENT.md#release-process). Summary:
    `admin/`, and `lookups.py`
 7. Publish or copy the new wheel to the internal package index
 8. Roll hosts one at a time: install wheel → `migrate ecosystem` → smoke Admin
+
+## 2.2.0 → 2.2.1
+
+Patch stabilization after the 2.2.0 release. No schema changes.
+
+```bash
+pip install --upgrade ecosystem==2.2.1
+# migrate not required for 2.2.0 → 2.2.1
+```
+
+Notable fix: nudge actions on a deleted/stale service return a clear validation
+error instead of a server error.
 
 ## 2.1.x → 2.2.0
 

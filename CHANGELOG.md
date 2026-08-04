@@ -5,6 +5,26 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.1] — 2026-08-04
+
+### Fixed
+
+- Workspace nudge helpers (`move_service_up` / `down` / `to_top` / `to_bottom`)
+  raise `ValidationError` when the service is no longer in the location, instead
+  of an uncaught `StopIteration`.
+
+### Changed
+
+- Documented the public read compatibility surface
+  (`ecosystem.services.get_active_services` re-export) in the README.
+- Removed a redundant outer `transaction.atomic` on `delete_service` (still
+  covered by `delete_services`).
+
+### Migration notes
+
+- No new migrations. Hosts on 2.2.0: install `ecosystem==2.2.1` and restart.
+  Template tag and Admin URLs are unchanged.
+
 ## [2.2.0] — 2026-08-04
 
 ### Added

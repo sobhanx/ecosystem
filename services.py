@@ -302,7 +302,6 @@ def set_locations_active(
     return Location.objects.filter(pk__in=ids).update(active=active)
 
 
-@transaction.atomic
 def delete_service(service: Service) -> None:
     """Delete ``service`` and renumber remaining siblings densely."""
     delete_services([service])
@@ -359,11 +358,22 @@ def _swap_positions(first: Service, second: Service) -> None:
     Service.objects.bulk_update([first, second], ["position", "updated_at"])
 
 
+def _sibling_index(siblings: list[Service], service: Service) -> int:
+    """Return the index of ``service`` among locked siblings, or raise."""
+    try:
+        return next(i for i, item in enumerate(siblings) if item.pk == service.pk)
+    except StopIteration as exc:
+        raise ValidationError(
+            "That service is no longer available in this location. "
+            "Refresh and try again."
+        ) from exc
+
+
 @transaction.atomic
 def move_service_up(service: Service) -> Service:
     """Swap ``service`` with the previous sibling, if any."""
     siblings = _ordered_siblings(service)
-    index = next(i for i, item in enumerate(siblings) if item.pk == service.pk)
+    index = _sibling_index(siblings, service)
     if index == 0:
         return siblings[0]
     _swap_positions(siblings[index - 1], siblings[index])
@@ -382,7 +392,7 @@ def move_service_up(service: Service) -> Service:
 def move_service_down(service: Service) -> Service:
     """Swap ``service`` with the next sibling, if any."""
     siblings = _ordered_siblings(service)
-    index = next(i for i, item in enumerate(siblings) if item.pk == service.pk)
+    index = _sibling_index(siblings, service)
     if index >= len(siblings) - 1:
         return siblings[index]
     _swap_positions(siblings[index], siblings[index + 1])
@@ -401,7 +411,7 @@ def move_service_down(service: Service) -> Service:
 def move_service_to_top(service: Service) -> Service:
     """Move ``service`` to position 0 within its location."""
     siblings = _ordered_siblings(service)
-    index = next(i for i, item in enumerate(siblings) if item.pk == service.pk)
+    index = _sibling_index(siblings, service)
     if index == 0:
         return siblings[0]
     item = siblings.pop(index)
@@ -415,7 +425,7 @@ def move_service_to_top(service: Service) -> Service:
 def move_service_to_bottom(service: Service) -> Service:
     """Move ``service`` to the last position within its location."""
     siblings = _ordered_siblings(service)
-    index = next(i for i, item in enumerate(siblings) if item.pk == service.pk)
+    index = _sibling_index(siblings, service)
     if index >= len(siblings) - 1:
         return siblings[index]
     item = siblings.pop(index)

@@ -264,3 +264,10 @@ class NudgeServiceTests(TestCase):
         move_service_to_bottom(self.blog)
         self.assertEqual(names(self.footer), ["Academy", "Shop", "Blog"])
         self.assertEqual(positions(self.footer), [0, 1, 2])
+
+    def test_nudge_missing_service_raises_validation_error(self) -> None:
+        deleted = self.shop
+        delete_service(deleted)
+        with self.assertRaises(ValidationError) as ctx:
+            move_service_up(deleted)
+        self.assertIn("no longer available", str(ctx.exception))

@@ -99,7 +99,7 @@ class PackagingSmokeTests(SimpleTestCase):
         self.assertIsNotNone(importlib.util.find_spec("ecosystem.migrations"))
         import ecosystem
 
-        self.assertEqual(ecosystem.__version__, "2.2.0")
+        self.assertEqual(ecosystem.__version__, "2.2.1")
 
     def test_wheel_contains_required_runtime_assets(self) -> None:
         try:
@@ -118,7 +118,7 @@ class PackagingSmokeTests(SimpleTestCase):
 
             wheel_path = outdir / wheel_name
             self.assertTrue(wheel_path.is_file(), f"missing wheel {wheel_path}")
-            self.assertIn("2.2.0", wheel_path.name)
+            self.assertIn("2.2.1", wheel_path.name)
 
             with zipfile.ZipFile(wheel_path) as archive:
                 names = set(archive.namelist())
@@ -197,7 +197,7 @@ class PackagingSmokeTests(SimpleTestCase):
                         "from django.core.management import call_command\n"
                         "call_command('check')\n"
                         "import ecosystem\n"
-                        "assert ecosystem.__version__ == '2.2.0'\n"
+                        "assert ecosystem.__version__ == '2.2.1'\n"
                     ),
                 ],
                 capture_output=True,
@@ -235,7 +235,7 @@ class PackagingSmokeTests(SimpleTestCase):
 
             sdist_path = outdir / sdist_name
             self.assertTrue(sdist_path.is_file(), f"missing sdist {sdist_path}")
-            self.assertIn("2.2.0", sdist_path.name)
+            self.assertIn("2.2.1", sdist_path.name)
 
             with tarfile.open(sdist_path, "r:gz") as archive:
                 names = set(archive.getnames())
