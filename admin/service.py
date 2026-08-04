@@ -12,6 +12,9 @@ from django.utils.translation import ngettext
 from ..forms import ServiceAdminForm
 from ..models import Service
 from ..services import (
+    delete_service,
+    delete_services,
+    duplicate_services as bulk_duplicate_services,
     move_services,
     quick_add_service,
     set_services_active,
@@ -167,6 +170,18 @@ class ServiceAdmin(admin.ModelAdmin):
             obj.refresh_from_db()
             form.instance = obj
 
+    def delete_model(self, request: HttpRequest, obj: Service) -> None:
+        """Delete via the service layer so sibling positions stay dense."""
+        delete_service(obj)
+
+    def delete_queryset(
+        self,
+        request: HttpRequest,
+        queryset: QuerySet[Service],
+    ) -> None:
+        """Bulk-delete via the service layer so each location is renumbered."""
+        delete_services(queryset)
+
     @admin.display(description=_("Location"), ordering="location__name")
     def location_link(self, obj: Service) -> str:
         if not obj.location_id:
@@ -277,9 +292,7 @@ class ServiceAdmin(admin.ModelAdmin):
         request: HttpRequest,
         queryset: QuerySet[Service],
     ) -> None:
-        from ..services import duplicate_services as bulk_duplicate
-
-        created = len(bulk_duplicate(list(queryset.order_by("pk"))))
+        created = len(bulk_duplicate_services(list(queryset.order_by("pk"))))
         self.message_user(
             request,
             ngettext(

@@ -143,7 +143,9 @@ class Service(models.Model):
         default=0,
         help_text=_(
             "Order within the location. Maintained by the application; "
-            "lower values appear first."
+            "lower values appear first. Dense ``0..n-1`` per location is an "
+            "application invariant (not a DB unique constraint) so swap and "
+            "reorder can update rows without transient collisions."
         ),
     )
     active = models.BooleanField(

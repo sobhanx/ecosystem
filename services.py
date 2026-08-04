@@ -28,6 +28,7 @@ __all__ = [
     "set_services_active",
     "set_locations_active",
     "delete_service",
+    "delete_services",
     "move_service_up",
     "move_service_down",
     "move_service_to_top",
@@ -304,14 +305,42 @@ def set_locations_active(
 @transaction.atomic
 def delete_service(service: Service) -> None:
     """Delete ``service`` and renumber remaining siblings densely."""
-    location = _lock_location(service.location)
-    siblings = _lock_location_services(location)
-    target = next((item for item in siblings if item.pk == service.pk), None)
-    if target is None:
-        return
-    remaining = [item for item in siblings if item.pk != service.pk]
-    Service.objects.filter(pk=target.pk).delete()
-    _renumber_services(remaining)
+    delete_services([service])
+
+
+@transaction.atomic
+def delete_services(services: Iterable[Service] | QuerySet[Service]) -> int:
+    """
+    Delete services and renumber each affected location densely.
+
+    Returns the number of matching rows deleted. Services already gone are
+    ignored. Each affected location ends with positions ``0..n-1``.
+    """
+    to_delete = _resolve_services(services)
+    pks = [service.pk for service in to_delete if service.pk is not None]
+    if not pks:
+        return 0
+
+    location_ids = {
+        service.location_id for service in to_delete if service.location_id is not None
+    }
+    if location_ids:
+        list(Location.objects.select_for_update().filter(pk__in=location_ids))
+        for location_id in location_ids:
+            list(
+                Service.objects.select_for_update()
+                .filter(location_id=location_id)
+                .order_by(*SERVICE_ORDER)
+            )
+
+    deleted, _ = Service.objects.filter(pk__in=pks).delete()
+    for location_id in location_ids:
+        _renumber_services(
+            list(
+                Service.objects.filter(location_id=location_id).order_by(*SERVICE_ORDER)
+            )
+        )
+    return int(deleted)
 
 
 def _ordered_siblings(service: Service) -> list[Service]:

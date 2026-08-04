@@ -228,6 +228,7 @@ class SetServicesActiveTests(TestCase):
         self.shop.refresh_from_db()
         self.assertEqual(self.shop.position, 0)
         self.assertEqual(Service.objects.filter(location=self.footer).count(), 1)
+        self.assertEqual(positions(self.footer), [0])
 
 
 class NudgeServiceTests(TestCase):
