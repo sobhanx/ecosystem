@@ -1,23 +1,36 @@
 # django-ecosystem
 
-Reusable Django application for managing external services that share one product
-ecosystem (for example `academy.example.com`, `shop.example.com`,
-`blog.example.com`).
+Reusable Django application for managing **placements** of related product
+services (for example Academy, Shop, Blog, Status).
 
-**Locations** are the editorial aggregate root. Editors manage each placement
-(footer, header, …) from a dedicated **Location workspace** in Django Admin.
-Templates still render with the same inclusion tag.
+**Core idea:** Ecosystem manages placements, not rows.
 
-The package makes **no assumptions** about the host project beyond standard
-Django settings (`INSTALLED_APPS`, media, and migrations).
+A **Location** is a named placement on the site (`footer`, `header`, …).
+**Services** are ordered entries inside that placement. Templates consume a
+location by its stable **key**:
 
-## Requirements
+```django
+{% load ecosystem %}
+{% ecosystem "footer" %}
+```
+
+Django Admin is the product UI. Editors open a location workspace, add and
+reorder services, and the template tag renders what visitors see.
+
+The package makes no assumptions about the host beyond standard Django settings
+(`INSTALLED_APPS`, media, and migrations).
+
+---
+
+## English — developers
+
+### Requirements
 
 - Python 3.10+
 - Django 5.2+
 - [Pillow](https://pillow.readthedocs.io/) (required by Django for `ImageField`)
 
-## Installation
+### Installation
 
 Prefer an exact version pin from a freshly built wheel or your internal index:
 
@@ -34,40 +47,32 @@ INSTALLED_APPS = [
 ]
 ```
 
-Then:
-
 ```bash
 python manage.py migrate ecosystem
 python manage.py collectstatic  # when you collect app static files in production
 ```
 
-See [UPGRADING.md](UPGRADING.md) for 1.x → 2.x notes and the release process.
-See [CHANGELOG.md](CHANGELOG.md) for version history.
+- Upgrade notes: [UPGRADING.md](UPGRADING.md)
+- Release history: [CHANGELOG.md](CHANGELOG.md)
+- Maintainer setup, tests, demo, release steps: [DEVELOPMENT.md](DEVELOPMENT.md)
 
-## Location-first workflow
+### Concepts
 
-1. Open **Ecosystem → Locations**.
-2. Create a location with a stable **key** (for example `footer`) and a clear name.
-3. Open the **workspace** for that location.
-4. Quick-add services, drag to reorder (or use move buttons), activate/hide,
-   duplicate, or move services between locations.
-5. Leave detailed edits (logo, description, slug) to the service change form when needed.
+| Concept | Role |
+|---|---|
+| Location | Aggregate root / placement (`key` matches the template tag) |
+| Service | Ordered entry belonging to one location |
+| Workspace | Per-location Admin screen for day-to-day editing |
+| Template tag | Public render API — unchanged across 2.x |
 
-`ServiceAdmin` remains available for global search and rare edits. Prefer the
-workspace for day-to-day ordering and activation. Changing a service’s location
-in ServiceAdmin keeps dense order on both placements.
+Service order within a location is system-managed (`0..n-1`). Editors reorder in
+the workspace; Admin forms do not expose editable positions.
 
-**Key contract:** `Location.key` is the public template identifier. Surrounding
-whitespace is trimmed on save. Changing an existing key is a breaking change for
-every `{% ecosystem "key" %}` call that still uses the old value.
+`Location.key` is the public template contract. Surrounding whitespace is
+trimmed on save. Changing an existing key breaks every template that still uses
+the old value.
 
-**Ordering:** Service order within a location is system-managed. Editors reorder
-from the location workspace; Admin forms do not expose editable positions.
-
-## Template tag (unchanged API)
-
-Location keys are free-form strings that must match `Location.key`
-(case-sensitive, after trimming surrounding whitespace):
+### Template tag
 
 ```django
 {% load ecosystem %}
@@ -77,86 +82,90 @@ Location keys are free-form strings that must match `Location.key`
 ```
 
 Only **active** services on an **active** location are returned, ordered by
-position, then primary key. Missing or inactive locations render an empty list.
+position then primary key. Missing or inactive locations render an empty list.
 
-Legacy alias (still supported):
+Legacy alias (still supported): `{% ecosystem_services "footer" %}`.
 
-```django
-{% ecosystem_services "footer" %}
-```
-
-## Configuration
+### Configuration
 
 | Setting | Purpose |
 |---|---|
 | `INSTALLED_APPS` | Register the app |
 | `MEDIA_URL` / `MEDIA_ROOT` | Serve uploaded logos |
-| Database | Store `Location` and `Service` rows |
-| `ECOSYSTEM_LOCATIONS` (optional) | **Migration-time labels only** for keys already present on 1.x services during `0004`. Does not create locations or drive Admin UI at runtime. |
-
-## Media configuration
+| Database | Store Location and Service data |
+| `ECOSYSTEM_LOCATIONS` (optional) | Migration-time labels only when upgrading from 1.x — not used by Admin at runtime |
 
 Logos are stored under `MEDIA_ROOT/ecosystem/services/`.
 
-```python
-MEDIA_URL = "/media/"
-MEDIA_ROOT = BASE_DIR / "media"
-```
+### Overriding templates
 
-Serve `MEDIA_ROOT` in development or via your reverse proxy in production.
+Default inclusion template: `ecosystem/services.html`. Override it in the host
+with the same relative path. The tag provides a `services` queryset.
 
-## Overriding templates
+### Internationalization
 
-Default inclusion template: `ecosystem/services.html`.
+- **Admin UI:** ships with Persian translations (`locale/fa/`). Persian is the
+  primary Admin language for editors.
+- **Developer docs** (this English section, `DEVELOPMENT.md`, `CHANGELOG.md`,
+  technical `UPGRADING.md`) stay in English.
 
-Override it in the host project with the same relative path. The tag provides a
-`services` queryset (logo, name, link; `open_in_new_tab` respected).
-
-## Internationalization
-
-Admin labels use `gettext_lazy`. Persian translations ship in `locale/fa/`.
-
-## Project structure
+### Package layout
 
 ```text
 ecosystem/                  # repository root (importable Django app)
-  models.py                 # Location + Service
-  services.py               # Write API (ordering, activate, duplicate, …)
-  lookups.py                # Read helpers for template rendering
-  admin.py                  # Location-first Admin + workspace
-  templates/admin/ecosystem/
-    location_workspace.html
-  static/ecosystem/         # SortableJS + workspace/admin helpers
+  models.py
+  services.py               # writes / mutations
+  lookups.py                # reads for templates
+  admin/                    # Location + Service Admin + workspace
+  templates/
+  static/ecosystem/
   templatetags/ecosystem.py
   locale/fa/
   migrations/
   tests/
   scripts/runtests.py
-  demo/                     # Local QA project (not packaged)
+  demo/                     # local QA project (not packaged)
 ```
 
-## Running package tests
+### Tests
 
 ```bash
 python scripts/runtests.py
 ```
 
-## Development demo
-
-```bash
-pip install -e .
-cd demo
-python manage.py migrate
-python manage.py loaddata sample_services
-python manage.py ensuresuperuser
-python manage.py runserver
-```
-
-- Homepage: http://127.0.0.1:8000/
-- Admin: http://127.0.0.1:8000/admin/
-
-Default demo superuser (created only when none exists): `admin` / `admin`.
-
-## License
+### License
 
 MIT
+
+---
+
+## فارسی — ویرایشگران و معرفی محصول
+
+**اکوسیستم محل‌های نمایش را مدیریت می‌کند، نه ردیف‌های خام دیتابیس.**
+
+### مفهوم
+
+- **محل نمایش (Location):** جایگاهی در سایت مثل پاورقی، هدر یا صفحه قیمت‌گذاری.
+  کلید پایدار (`key`) همان آرگومان تگ قالب است؛ مثلاً `footer`.
+- **سرویس (Service):** یک پیوند مرتب‌شده داخل همان محل نمایش (آکادمی، فروشگاه، …).
+- **مدیریت سرویس‌های محل نمایش (Workspace):** صفحه اصلی ویرایش در ادمین جنگو
+  برای افزودن، مرتب‌سازی، فعال/غیرفعال کردن و تکثیر سرویس‌ها.
+
+بازدیدکننده سایت فقط سرویس‌های **فعال** روی محل نمایش **فعال** را می‌بیند.
+
+### جریان کار در ادمین
+
+1. وارد **Django Admin** شوید.
+2. از منوی **اکوسیستم ← محل‌های نمایش** یک محل را انتخاب کنید.
+3. **مدیریت سرویس‌های محل نمایش** (Workspace) را باز کنید.
+4. سرویس اضافه کنید، با کشیدن یا دکمه‌های جابه‌جایی **ترتیب** را تنظیم کنید،
+   نمایش را فعال یا مخفی کنید.
+5. در قالب سایت از تگ زیر استفاده کنید (بدون تغییر در API):
+
+```django
+{% load ecosystem %}
+{% ecosystem "footer" %}
+```
+
+زبان رابط ادمین برای ویرایشگران به‌صورت پیش‌فرض فارسی پشتیبانی می‌شود. مستندات
+فنی توسعه‌دهندگان به زبان انگلیسی است.

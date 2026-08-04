@@ -1,7 +1,7 @@
 """Django Admin package for ecosystem locations and services.
 
 Importing this package registers ``LocationAdmin`` and ``ServiceAdmin`` with
-the default admin site (same behavior as the former monolithic ``admin.py``).
+the default admin site.
 """
 
 from __future__ import annotations

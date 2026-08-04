@@ -12,9 +12,12 @@ Pin hosts to an exact version (for example `ecosystem==2.1.0`) when installing
 from an internal index or path. After each release, install from a freshly built
 wheel — do not reuse stale `dist/` artifacts from older checkouts.
 
-See [CHANGELOG.md](CHANGELOG.md) for release notes.
+See [CHANGELOG.md](CHANGELOG.md) for release notes and [DEVELOPMENT.md](DEVELOPMENT.md)
+for the maintainer release checklist.
 
 ## Release process (maintainers)
+
+Follow [DEVELOPMENT.md](DEVELOPMENT.md#release-process). Summary:
 
 1. Ensure tests pass: `python scripts/runtests.py`
 2. Bump version in `pyproject.toml` and `__init__.py`
@@ -22,9 +25,22 @@ See [CHANGELOG.md](CHANGELOG.md) for release notes.
 4. Remove stale build output: `rm -rf dist build *.egg-info`
 5. Build: `python -m build`
 6. Verify the wheel contains `static/`, `templates/`, `locale/`, `migrations/`,
-   and `lookups.py`
+   `admin/`, and `lookups.py`
 7. Publish or copy the new wheel to the internal package index
 8. Roll hosts one at a time: install wheel → `migrate ecosystem` → smoke Admin
+
+## 2.1.x → 2.2.0
+
+Backward-compatible documentation, Admin polish, validation, and test maturity
+release. No schema migrations.
+
+```bash
+pip install --upgrade ecosystem==2.2.0
+python manage.py collectstatic  # if you collect app static files
+```
+
+Template tag API is unchanged. Prefer the location workspace for day-to-day
+editing.
 
 ## 2.0.x → 2.1.0
 

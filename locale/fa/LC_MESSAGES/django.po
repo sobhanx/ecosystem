@@ -4,10 +4,10 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: django-ecosystem 2.0.0\n"
+"Project-Id-Version: django-ecosystem 2.2.0\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-07-25 15:04+0330\n"
-"PO-Revision-Date: 2026-07-25 15:10+0330\n"
+"PO-Revision-Date: 2026-08-04 21:20+0330\n"
 "Last-Translator: Ecosystem Contributors\n"
 "Language-Team: Persian\n"
 "Language: fa\n"
@@ -194,24 +194,21 @@ msgstr "آدرس"
 msgid "location"
 msgstr "محل نمایش"
 
-#: models.py:70
-msgid ""
-"Placement key matched exactly by the template tag. Prefer choosing a known "
-"key in admin; new keys stay allowed (examples: \"footer\", \"pricing_page\")."
-msgstr ""
-"کلید محل نمایش که تگ قالب دقیقاً با آن مطابقت می‌دهد. ترجیحاً یکی از کلیدهای "
-"آشنا را در ادمین انتخاب کنید؛ کلیدهای جدید همچنان مجازند (نمونه: «footer»، "
-"«pricing_page»)."
+#: models.py:58
+msgid "locations"
+msgstr "محل‌های نمایش"
 
-#: models.py:76
-msgid "display order"
-msgstr "ترتیب نمایش"
+#: models.py:141
+msgid "position"
+msgstr "ترتیب"
 
-#: models.py:79
+#: models.py:144
 msgid ""
-"Controls the order within the same placement. Smaller numbers appear first."
+"Order within the location. Managed automatically — use the location "
+"workspace to reorder. Lower values appear first."
 msgstr ""
-"ترتیب نمایش در یک محل را کنترل می‌کند. عددهای کوچک‌تر زودتر نمایش داده می‌شوند."
+"ترتیب داخل محل نمایش. به‌صورت خودکار مدیریت می‌شود — برای تغییر ترتیب از "
+"مدیریت سرویس‌های محل نمایش استفاده کنید. مقادیر کوچک‌تر زودتر می‌آیند."
 
 #: models.py:84
 msgid "active"
@@ -240,7 +237,7 @@ msgstr "سرویس‌ها"
 # --- 2.0 Location workspace / Admin polish ---
 
 msgid "Location workspace"
-msgstr "فضای کاری محل نمایش"
+msgstr "مدیریت سرویس‌های محل نمایش"
 
 msgid "Copy tag"
 msgstr "کپی تگ"
@@ -300,10 +297,13 @@ msgid "Copied"
 msgstr "کپی شد"
 
 msgid "Open workspace"
-msgstr "باز کردن فضای کاری"
+msgstr "باز کردن مدیریت سرویس‌ها"
 
 msgid "Workspace"
-msgstr "فضای کاری"
+msgstr "مدیریت سرویس‌های محل نمایش"
+
+msgid "Workspace: %(name)s"
+msgstr "مدیریت سرویس‌ها: %(name)s"
 
 msgid "Quick add"
 msgstr "افزودن سریع"

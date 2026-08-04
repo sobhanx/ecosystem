@@ -76,9 +76,26 @@
     "model": "ecosystem.service",
     "pk": 3,
     "fields": {
+      "name": "Dashboard",
+      "slug": "dashboard",
+      "description": "Signed-in product control panel.",
+      "logo": "",
+      "url": "https://app.example.com",
+      "location": 1,
+      "position": 2,
+      "active": true,
+      "open_in_new_tab": true,
+      "created_at": "2026-01-01T00:00:00Z",
+      "updated_at": "2026-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "ecosystem.service",
+    "pk": 4,
+    "fields": {
       "name": "Documentation",
       "slug": "documentation",
-      "description": "Product docs and API reference.",
+      "description": "Product docs and guides.",
       "logo": "",
       "url": "https://docs.example.com",
       "location": 2,
@@ -91,7 +108,7 @@
   },
   {
     "model": "ecosystem.service",
-    "pk": 4,
+    "pk": 5,
     "fields": {
       "name": "Support",
       "slug": "support",
@@ -108,7 +125,7 @@
   },
   {
     "model": "ecosystem.service",
-    "pk": 5,
+    "pk": 6,
     "fields": {
       "name": "Blog",
       "slug": "blog",
@@ -125,7 +142,7 @@
   },
   {
     "model": "ecosystem.service",
-    "pk": 6,
+    "pk": 7,
     "fields": {
       "name": "Status",
       "slug": "status",
@@ -136,6 +153,23 @@
       "position": 1,
       "active": true,
       "open_in_new_tab": false,
+      "created_at": "2026-01-01T00:00:00Z",
+      "updated_at": "2026-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "ecosystem.service",
+    "pk": 8,
+    "fields": {
+      "name": "Careers",
+      "slug": "careers",
+      "description": "Hidden example — inactive services stay in Admin but are omitted from templates.",
+      "logo": "",
+      "url": "https://careers.example.com",
+      "location": 3,
+      "position": 2,
+      "active": false,
+      "open_in_new_tab": true,
       "created_at": "2026-01-01T00:00:00Z",
       "updated_at": "2026-01-01T00:00:00Z"
     }

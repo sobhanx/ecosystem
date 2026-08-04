@@ -162,16 +162,34 @@ class DemoFixtureTests(TestCase):
         )
         self.assertTrue(fixture.exists())
         call_command("loaddata", str(fixture), verbosity=0)
+        self.assertTrue(Location.objects.filter(key="header").exists())
+        self.assertTrue(Location.objects.filter(key="main").exists())
         self.assertTrue(Location.objects.filter(key="footer").exists())
-        self.assertGreaterEqual(Service.objects.count(), 1)
+        self.assertEqual(Service.objects.filter(location__key="header").count(), 3)
+        self.assertTrue(
+            Service.objects.filter(location__key="footer", name="Careers", active=False).exists()
+        )
+        from ecosystem.lookups import get_active_services
+
+        footer_names = list(get_active_services("footer").values_list("name", flat=True))
+        self.assertEqual(footer_names, ["Blog", "Status"])
+        self.assertNotIn("Careers", footer_names)
 
 
 class PersianWorkspaceTranslationTests(TestCase):
     def test_workspace_strings_have_persian_translations(self) -> None:
         with translation.override("fa"):
-            self.assertEqual(_("Location workspace"), "فضای کاری محل نمایش")
+            self.assertEqual(
+                _("Location workspace"),
+                "مدیریت سرویس‌های محل نمایش",
+            )
             self.assertEqual(_("Copy tag"), "کپی تگ")
-            self.assertEqual(_("Open workspace"), "باز کردن فضای کاری")
+            self.assertEqual(_("Open workspace"), "باز کردن مدیریت سرویس‌ها")
+            self.assertEqual(_("Workspace"), "مدیریت سرویس‌های محل نمایش")
+            self.assertEqual(_("location"), "محل نمایش")
+            self.assertEqual(_("locations"), "محل‌های نمایش")
+            self.assertEqual(_("service"), "سرویس")
+            self.assertEqual(_("position"), "ترتیب")
             self.assertEqual(_("Order"), "ترتیب")
             self.assertEqual(
                 _(
@@ -185,4 +203,5 @@ class PersianWorkspaceTranslationTests(TestCase):
                 _("Select at least one service."),
                 "حداقل یک سرویس را انتخاب کنید.",
             )
+            self.assertNotIn("display order", _("position").lower())
             self.assertNotEqual(_("Workspace"), "Workspace")

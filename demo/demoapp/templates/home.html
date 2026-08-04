@@ -108,31 +108,45 @@
       <header class="site">
         <div class="brand">Ecosystem demo</div>
         <p class="meta">
-          Local preview ·
+          Placements → workspace → template tag ·
           <a href="/admin/">Django Admin</a>
         </p>
       </header>
 
       <section>
+        <h2>How to explore</h2>
+        <p class="hint">
+          Open Admin → <strong>Locations</strong> → choose Header, Main, or Footer →
+          <strong>Open workspace</strong>. Change order or visibility, then reload
+          this page. Each section below is rendered with
+          <code>{% templatetag openblock %} ecosystem "key" {% templatetag closeblock %}</code>.
+        </p>
+      </section>
+
+      <section>
         <h2>Header</h2>
-        <p class="hint">Services with location key <code>header</code></p>
+        <p class="hint">Location key <code>header</code> — Academy, Shop, Dashboard</p>
         {% ecosystem "header" %}
       </section>
 
       <section>
         <h2>Main</h2>
-        <p class="hint">Services with location key <code>main</code></p>
+        <p class="hint">Location key <code>main</code> — Documentation, Support</p>
         {% ecosystem "main" %}
       </section>
 
       <section>
         <h2>Footer</h2>
-        <p class="hint">Services with location key <code>footer</code></p>
+        <p class="hint">
+          Location key <code>footer</code> — Blog, Status
+          (Careers is inactive in the fixture and should not appear here)
+        </p>
         {% ecosystem "footer" %}
       </section>
 
       <footer class="site">
         Development-only project. Not included in the published package.
+        See <code>demo/README.md</code> for Persian Admin preview steps.
       </footer>
     </div>
   </body>
