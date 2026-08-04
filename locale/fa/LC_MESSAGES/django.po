@@ -329,6 +329,33 @@ msgstr "ترتیب ذخیره شد."
 msgid "Could not save order."
 msgstr "ذخیره ترتیب ممکن نشد."
 
+msgid "Could not save order. Refresh the page and try again, or use the move buttons."
+msgstr "ذخیره ترتیب ممکن نشد. صفحه را تازه کنید و دوباره تلاش کنید، یا از دکمه‌های جابه‌جایی استفاده کنید."
+
+msgid "You do not have permission to reorder services."
+msgstr "شما اجازه تغییر ترتیب سرویس‌ها را ندارید."
+
+msgid "Copy failed — select the tag and copy manually."
+msgstr "کپی نشد — تگ را انتخاب کنید و دستی کپی کنید."
+
+msgid "Copy failed — select the URL and copy manually."
+msgstr "کپی نشد — آدرس را انتخاب کنید و دستی کپی کنید."
+
+msgid "Primary actions"
+msgstr "عملیات اصلی"
+
+msgid "Reorder actions"
+msgstr "عملیات تغییر ترتیب"
+
+msgid "Dangerous actions"
+msgstr "عملیات حساس"
+
+msgid "Order"
+msgstr "ترتیب"
+
+msgid "Delete %(name)s"
+msgstr "حذف %(name)s"
+
 msgid "Drag to reorder"
 msgstr "کشیدن برای تغییر ترتیب"
 

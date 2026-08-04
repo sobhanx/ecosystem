@@ -12,14 +12,55 @@
     window.setTimeout(function () {
       button.textContent =
         button.getAttribute("data-original-label") || original;
-    }, 1500);
+    }, 1800);
+  }
+
+  function setCopyStatus(message, isError) {
+    var status = document.getElementById("eco-copy-status");
+    if (!status) return;
+    status.textContent = message || "";
+    status.classList.toggle("eco-status-error", !!isError && !!message);
+  }
+
+  function fallbackCopy(text) {
+    return new Promise(function (resolve, reject) {
+      var textarea = document.createElement("textarea");
+      textarea.value = text;
+      textarea.setAttribute("readonly", "");
+      textarea.style.position = "fixed";
+      textarea.style.top = "0";
+      textarea.style.left = "0";
+      textarea.style.opacity = "0";
+      document.body.appendChild(textarea);
+      textarea.focus();
+      textarea.select();
+      textarea.setSelectionRange(0, textarea.value.length);
+      var succeeded = false;
+      try {
+        succeeded = document.execCommand("copy");
+      } catch (error) {
+        succeeded = false;
+      }
+      document.body.removeChild(textarea);
+      if (succeeded) {
+        resolve();
+      } else {
+        reject(new Error("Clipboard unavailable"));
+      }
+    });
   }
 
   function copyText(text) {
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      return navigator.clipboard.writeText(text);
+    if (
+      navigator.clipboard &&
+      typeof navigator.clipboard.writeText === "function" &&
+      window.isSecureContext
+    ) {
+      return navigator.clipboard.writeText(text).catch(function () {
+        return fallbackCopy(text);
+      });
     }
-    return Promise.reject(new Error("Clipboard unavailable"));
+    return fallbackCopy(text);
   }
 
   function resolveText(button) {
@@ -45,19 +86,23 @@
     if (!button) return;
     event.preventDefault();
     var text = resolveText(button);
-    if (!text) return;
+    var failedLabel =
+      button.getAttribute("data-copy-failed-label") || "Copy failed";
+    if (!text) {
+      flashLabel(button, failedLabel);
+      setCopyStatus(failedLabel, true);
+      return;
+    }
     copyText(text)
       .then(function () {
-        flashLabel(
-          button,
-          button.getAttribute("data-copied-label") || "Copied"
-        );
+        var copied =
+          button.getAttribute("data-copied-label") || "Copied";
+        flashLabel(button, copied);
+        setCopyStatus(copied, false);
       })
       .catch(function () {
-        flashLabel(
-          button,
-          button.getAttribute("data-copy-failed-label") || "Copy failed"
-        );
+        flashLabel(button, failedLabel);
+        setCopyStatus(failedLabel, true);
       });
   });
 })();

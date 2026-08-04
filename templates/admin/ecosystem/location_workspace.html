@@ -86,7 +86,11 @@
   }
   .eco-bulk label { font-weight: 600; font-size: 0.85rem; margin-right: 0.25rem; }
   .eco-bulk select { min-width: 160px; }
-  .eco-table { width: 100%; border-collapse: collapse; }
+  .eco-table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .eco-table { width: 100%; border-collapse: collapse; min-width: 640px; }
   .eco-table th, .eco-table td {
     padding: 0.7rem 0.45rem;
     border-bottom: 1px solid var(--hairline-color, #eee);
@@ -148,9 +152,24 @@
     padding-right: 0;
     margin-right: 0;
   }
+  .eco-action-group-danger {
+    border-right: 0;
+    margin-right: 0;
+    padding-right: 0;
+    padding-left: 0.4rem;
+    border-left: 1px solid #e4bcbc;
+  }
   .eco-actions form { display: inline; margin: 0; }
   .eco-actions button, .eco-actions .button {
     margin: 0;
+  }
+  .eco-actions button:focus-visible,
+  .eco-actions a:focus-visible,
+  .eco-bulk button:focus-visible,
+  .eco-tag button:focus-visible,
+  .eco-drag-handle:focus-visible {
+    outline: 2px solid var(--link-fg, #447e9b);
+    outline-offset: 2px;
   }
   .eco-empty {
     padding: 1.5rem 1.25rem;
@@ -190,10 +209,6 @@
     font-size: 1rem;
     line-height: 1;
   }
-  .eco-drag-handle:focus {
-    outline: 2px solid var(--link-fg, #447e9b);
-    outline-offset: 2px;
-  }
   .eco-drag-handle:active { cursor: grabbing; }
   .eco-sortable-ghost { opacity: 0.45; background: var(--darkened-bg, #f0f0f0); }
   .eco-sortable-chosen { background: var(--selected-bg, #ffc); }
@@ -205,6 +220,13 @@
   }
   .eco-reorder-status.eco-status-ok { color: #0b6b2f; }
   .eco-reorder-status.eco-status-error { color: #ba2121; }
+  .eco-copy-status {
+    min-height: 1.1rem;
+    margin: 0.35rem 0 0;
+    font-size: 0.85rem;
+    color: var(--body-quiet-color, #666);
+  }
+  .eco-copy-status.eco-status-error { color: #ba2121; }
   .eco-order-hint {
     margin: 0 0 0.75rem;
     color: var(--body-quiet-color, #666);
@@ -220,6 +242,29 @@
     clip: rect(0, 0, 0, 0);
     white-space: nowrap;
     border: 0;
+  }
+  @media (max-width: 800px) {
+    .eco-url-cell { max-width: 140px; }
+    .eco-actions {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.5rem;
+    }
+    .eco-action-group {
+      border-right: 0;
+      border-bottom: 1px solid var(--hairline-color, #ddd);
+      padding-right: 0;
+      padding-bottom: 0.4rem;
+      margin-right: 0;
+      width: 100%;
+    }
+    .eco-action-group-danger {
+      border-left: 0;
+      padding-left: 0;
+      border-bottom: 0;
+    }
+    .eco-bulk { align-items: stretch; }
+    .eco-bulk select { min-width: 0; width: 100%; }
   }
 </style>
 {% endblock %}
@@ -261,8 +306,15 @@
           class="button"
           data-copy-from="eco-template-tag"
           data-copied-label="{% translate 'Copied' %}"
+          data-copy-failed-label="{% translate 'Copy failed — select the tag and copy manually.' %}"
         >{% translate 'Copy tag' %}</button>
       </div>
+      <p
+        id="eco-copy-status"
+        class="eco-copy-status"
+        role="status"
+        aria-live="polite"
+      ></p>
       <div class="eco-nav-links">
         <a href="{% url 'admin:ecosystem_location_change' location.pk %}">{% translate 'Edit location' %}</a>
         <a href="{% url 'admin:ecosystem_location_changelist' %}">{% translate 'All locations' %}</a>
@@ -305,7 +357,7 @@
         aria-live="polite"
         data-saving-label="{% translate 'Saving order…' %}"
         data-saved-label="{% translate 'Order saved.' %}"
-        data-error-label="{% translate 'Could not save order.' %}"
+        data-error-label="{% translate 'Could not save order. Refresh the page and try again, or use the move buttons.' %}"
       ></p>
 
       <form method="post" id="eco-bulk-form">
@@ -327,6 +379,7 @@
           {% endif %}
         </div>
 
+        <div class="eco-table-wrap">
         <table class="eco-table">
           <thead>
             <tr>
@@ -383,6 +436,7 @@
                       class="button"
                       data-copy="{{ service.url }}"
                       data-copied-label="{% translate 'Copied' %}"
+                      data-copy-failed-label="{% translate 'Copy failed — select the URL and copy manually.' %}"
                       title="{% translate 'Copy URL' %}"
                       aria-label="{% translate 'Copy URL' %}"
                     >{% translate 'Copy' %}</button>
@@ -396,27 +450,28 @@
                   {% endif %}
                 </td>
                 <td class="eco-actions">
-                  <span class="eco-action-group">
+                  <span class="eco-action-group" role="group" aria-label="{% translate 'Primary actions' %}">
                     <a class="button" href="{% url 'admin:ecosystem_service_change' service.pk %}">{% translate 'Edit' %}</a>
-                    <button type="submit" class="button" form="eco-row-{{ service.pk }}-toggle" name="workspace_action" value="toggle_active">
+                    <button type="submit" class="button" form="eco-row-{{ service.pk }}" name="workspace_action" value="toggle_active">
                       {% if service.active %}{% translate 'Hide' %}{% else %}{% translate 'Show' %}{% endif %}
                     </button>
-                    <button type="submit" class="button" form="eco-row-{{ service.pk }}-dup" name="workspace_action" value="duplicate">{% translate 'Duplicate' %}</button>
+                    <button type="submit" class="button" form="eco-row-{{ service.pk }}" name="workspace_action" value="duplicate">{% translate 'Duplicate' %}</button>
                   </span>
-                  <span class="eco-action-group">
-                    <button type="submit" class="button" form="eco-row-{{ service.pk }}-top" name="workspace_action" value="move_top" title="{% translate 'Move to top' %}" aria-label="{% translate 'Move to top' %}">⇈</button>
-                    <button type="submit" class="button" form="eco-row-{{ service.pk }}-up" name="workspace_action" value="move_up" title="{% translate 'Move up' %}" aria-label="{% translate 'Move up' %}">↑</button>
-                    <button type="submit" class="button" form="eco-row-{{ service.pk }}-down" name="workspace_action" value="move_down" title="{% translate 'Move down' %}" aria-label="{% translate 'Move down' %}">↓</button>
-                    <button type="submit" class="button" form="eco-row-{{ service.pk }}-bottom" name="workspace_action" value="move_bottom" title="{% translate 'Move to bottom' %}" aria-label="{% translate 'Move to bottom' %}">⇊</button>
+                  <span class="eco-action-group" role="group" aria-label="{% translate 'Reorder actions' %}">
+                    <button type="submit" class="button" form="eco-row-{{ service.pk }}" name="workspace_action" value="move_top" title="{% translate 'Move to top' %}" aria-label="{% translate 'Move to top' %}">⇈</button>
+                    <button type="submit" class="button" form="eco-row-{{ service.pk }}" name="workspace_action" value="move_up" title="{% translate 'Move up' %}" aria-label="{% translate 'Move up' %}">↑</button>
+                    <button type="submit" class="button" form="eco-row-{{ service.pk }}" name="workspace_action" value="move_down" title="{% translate 'Move down' %}" aria-label="{% translate 'Move down' %}">↓</button>
+                    <button type="submit" class="button" form="eco-row-{{ service.pk }}" name="workspace_action" value="move_bottom" title="{% translate 'Move to bottom' %}" aria-label="{% translate 'Move to bottom' %}">⇊</button>
                   </span>
-                  <span class="eco-action-group">
+                  <span class="eco-action-group eco-action-group-danger" role="group" aria-label="{% translate 'Dangerous actions' %}">
                     <button
                       type="submit"
                       class="button deletelink"
-                      form="eco-row-{{ service.pk }}-delete"
+                      form="eco-row-{{ service.pk }}"
                       name="workspace_action"
                       value="delete"
                       data-confirm="{% translate 'Delete this service?' %}"
+                      aria-label="{% blocktranslate with name=service.name %}Delete {{ name }}{% endblocktranslate %}"
                     >{% translate 'Delete' %}</button>
                   </span>
                 </td>
@@ -424,34 +479,11 @@
             {% endfor %}
           </tbody>
         </table>
+        </div>
       </form>
 
       {% for service in services %}
-        <form method="post" id="eco-row-{{ service.pk }}-toggle" hidden>
-          {% csrf_token %}
-          <input type="hidden" name="service_id" value="{{ service.pk }}">
-        </form>
-        <form method="post" id="eco-row-{{ service.pk }}-dup" hidden>
-          {% csrf_token %}
-          <input type="hidden" name="service_id" value="{{ service.pk }}">
-        </form>
-        <form method="post" id="eco-row-{{ service.pk }}-top" hidden>
-          {% csrf_token %}
-          <input type="hidden" name="service_id" value="{{ service.pk }}">
-        </form>
-        <form method="post" id="eco-row-{{ service.pk }}-up" hidden>
-          {% csrf_token %}
-          <input type="hidden" name="service_id" value="{{ service.pk }}">
-        </form>
-        <form method="post" id="eco-row-{{ service.pk }}-down" hidden>
-          {% csrf_token %}
-          <input type="hidden" name="service_id" value="{{ service.pk }}">
-        </form>
-        <form method="post" id="eco-row-{{ service.pk }}-bottom" hidden>
-          {% csrf_token %}
-          <input type="hidden" name="service_id" value="{{ service.pk }}">
-        </form>
-        <form method="post" id="eco-row-{{ service.pk }}-delete" hidden>
+        <form method="post" id="eco-row-{{ service.pk }}" hidden>
           {% csrf_token %}
           <input type="hidden" name="service_id" value="{{ service.pk }}">
         </form>

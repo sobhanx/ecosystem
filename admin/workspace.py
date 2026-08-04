@@ -150,14 +150,25 @@ class LocationWorkspaceMixin:
         """JSON endpoint: persist drag-and-drop order via ``reorder_services``."""
         if request.method != "POST":
             return JsonResponse(
-                {"ok": False, "error": gettext("POST required.")},
+                {
+                    "ok": False,
+                    "error": gettext(
+                        "Could not save order. Refresh the page and try again, "
+                        "or use the move buttons."
+                    ),
+                },
                 status=405,
             )
 
         location = get_object_or_404(self.get_queryset(request), pk=object_id)
         if not self.has_change_permission(request, location):
             return JsonResponse(
-                {"ok": False, "error": gettext("Permission denied.")},
+                {
+                    "ok": False,
+                    "error": gettext(
+                        "You do not have permission to reorder services."
+                    ),
+                },
                 status=403,
             )
 
@@ -165,7 +176,13 @@ class LocationWorkspaceMixin:
             payload = json.loads(request.body.decode("utf-8") or "{}")
         except (TypeError, ValueError, UnicodeDecodeError):
             return JsonResponse(
-                {"ok": False, "error": gettext("Malformed JSON payload.")},
+                {
+                    "ok": False,
+                    "error": gettext(
+                        "Could not save order. Refresh the page and try again, "
+                        "or use the move buttons."
+                    ),
+                },
                 status=400,
             )
 
@@ -174,7 +191,10 @@ class LocationWorkspaceMixin:
             return JsonResponse(
                 {
                     "ok": False,
-                    "error": gettext("ordered_ids must be a list of service IDs."),
+                    "error": gettext(
+                        "Could not save order. Refresh the page and try again, "
+                        "or use the move buttons."
+                    ),
                 },
                 status=400,
             )
@@ -185,16 +205,27 @@ class LocationWorkspaceMixin:
             return JsonResponse(
                 {
                     "ok": False,
-                    "error": gettext("ordered_ids must contain integers only."),
+                    "error": gettext(
+                        "Could not save order. Refresh the page and try again, "
+                        "or use the move buttons."
+                    ),
                 },
                 status=400,
             )
 
         try:
             reorder_services(location, normalized_ids)
-        except ValidationError as exc:
-            message = "; ".join(exc.messages) if hasattr(exc, "messages") else str(exc)
-            return JsonResponse({"ok": False, "error": message}, status=400)
+        except ValidationError:
+            return JsonResponse(
+                {
+                    "ok": False,
+                    "error": gettext(
+                        "Could not save order. Refresh the page and try again, "
+                        "or use the move buttons."
+                    ),
+                },
+                status=400,
+            )
 
         return JsonResponse({"ok": True})
 

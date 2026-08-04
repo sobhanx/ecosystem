@@ -135,7 +135,7 @@
               throw new Error(
                 (result.data && result.data.error) ||
                   (statusEl && statusEl.getAttribute("data-error-label")) ||
-                  "Reorder failed."
+                  "Could not save order. Refresh the page and try again, or use the move buttons."
               );
             }
             previousOrder = orderedIds;
@@ -151,9 +151,9 @@
             updateOrderLabels(root);
             setStatus(
               statusEl,
-              error.message ||
+              (error && error.message) ||
                 (statusEl && statusEl.getAttribute("data-error-label")) ||
-                "Reorder failed.",
+                "Could not save order. Refresh the page and try again, or use the move buttons.",
               true
             );
           })

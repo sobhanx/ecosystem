@@ -85,6 +85,7 @@ class LocationReorderEndpointTests(TestCase):
         self.assertEqual(response.status_code, 403)
         data = response.json()
         self.assertFalse(data["ok"])
+        self.assertIn("permission", data["error"].lower())
 
         self.a.refresh_from_db()
         self.assertEqual(self.a.position, 0)
@@ -160,6 +161,12 @@ class LocationReorderEndpointTests(TestCase):
         self.assertContains(response, 'value="move_top"')
         self.assertContains(response, 'value="move_bottom"')
         self.assertContains(response, "data-confirm")
+        self.assertContains(
+            response,
+            "Could not save order. Refresh the page and try again",
+        )
+        self.assertContains(response, 'role="status"')
+        self.assertContains(response, 'aria-live="polite"')
 
     def test_staff_with_change_permission_can_reorder(self) -> None:
         User = get_user_model()

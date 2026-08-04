@@ -172,6 +172,15 @@ class PersianWorkspaceTranslationTests(TestCase):
             self.assertEqual(_("Location workspace"), "فضای کاری محل نمایش")
             self.assertEqual(_("Copy tag"), "کپی تگ")
             self.assertEqual(_("Open workspace"), "باز کردن فضای کاری")
+            self.assertEqual(_("Order"), "ترتیب")
+            self.assertEqual(
+                _(
+                    "Could not save order. Refresh the page and try again, "
+                    "or use the move buttons."
+                ),
+                "ذخیره ترتیب ممکن نشد. صفحه را تازه کنید و دوباره تلاش کنید، "
+                "یا از دکمه‌های جابه‌جایی استفاده کنید.",
+            )
             self.assertEqual(
                 _("Select at least one service."),
                 "حداقل یک سرویس را انتخاب کنید.",
