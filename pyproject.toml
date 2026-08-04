@@ -46,6 +46,7 @@ ecosystem = "."
 [tool.setuptools.package-data]
 ecosystem = [
     "templates/**/*",
+    "static/**/*",
     "locale/**/*",
 ]
 

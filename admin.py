@@ -7,13 +7,16 @@ mutations belong in ``services.py``.
 
 from __future__ import annotations
 
+import json
+
 from django.contrib import admin, messages
 from django.core.exceptions import ValidationError
 from django.db.models import Count, Q, QuerySet
-from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
+from django.http import HttpRequest, HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, render
 from django.urls import NoReverseMatch, path, reverse
 from django.utils.html import format_html
+from django.utils.translation import gettext
 from django.utils.translation import gettext_lazy as _
 from django.utils.translation import ngettext
 
@@ -27,6 +30,7 @@ from .services import (
     move_service_to_top,
     move_service_up,
     quick_add_service,
+    reorder_services,
     set_services_active,
 )
 
@@ -53,6 +57,13 @@ def _workspace_url(location_id: int) -> str:
         return reverse("admin:ecosystem_location_workspace", args=[location_id])
     except NoReverseMatch:
         return f"/admin/ecosystem/location/{location_id}/workspace/"
+
+
+def _reorder_url(location_id: int) -> str:
+    try:
+        return reverse("admin:ecosystem_location_reorder", args=[location_id])
+    except NoReverseMatch:
+        return f"/admin/ecosystem/location/{location_id}/reorder/"
 
 
 @admin.register(Location)
@@ -122,6 +133,11 @@ class LocationAdmin(admin.ModelAdmin):
                 "<path:object_id>/workspace/",
                 self.admin_site.admin_view(self.workspace_view),
                 name="%s_%s_workspace" % info,
+            ),
+            path(
+                "<path:object_id>/reorder/",
+                self.admin_site.admin_view(self.reorder_view),
+                name="%s_%s_reorder" % info,
             ),
         ]
         return custom + super().get_urls()
@@ -248,10 +264,67 @@ class LocationAdmin(admin.ModelAdmin):
             "location": location,
             "services": services,
             "quick_add_form": quick_add_form,
+            "reorder_url": _reorder_url(location.pk),
             "has_view_permission": self.has_view_permission(request, location),
             "has_change_permission": self.has_change_permission(request, location),
         }
         return render(request, "admin/ecosystem/location_workspace.html", context)
+
+    def reorder_view(
+        self,
+        request: HttpRequest,
+        object_id: str,
+    ) -> JsonResponse:
+        """JSON endpoint: persist drag-and-drop order via ``reorder_services``."""
+        if request.method != "POST":
+            return JsonResponse(
+                {"ok": False, "error": gettext("POST required.")},
+                status=405,
+            )
+
+        location = get_object_or_404(Location, pk=object_id)
+        if not self.has_change_permission(request, location):
+            return JsonResponse(
+                {"ok": False, "error": gettext("Permission denied.")},
+                status=403,
+            )
+
+        try:
+            payload = json.loads(request.body.decode("utf-8") or "{}")
+        except (TypeError, ValueError, UnicodeDecodeError):
+            return JsonResponse(
+                {"ok": False, "error": gettext("Malformed JSON payload.")},
+                status=400,
+            )
+
+        ordered_ids = payload.get("ordered_ids")
+        if not isinstance(ordered_ids, list):
+            return JsonResponse(
+                {
+                    "ok": False,
+                    "error": gettext("ordered_ids must be a list of service IDs."),
+                },
+                status=400,
+            )
+
+        try:
+            normalized_ids = [int(pk) for pk in ordered_ids]
+        except (TypeError, ValueError):
+            return JsonResponse(
+                {
+                    "ok": False,
+                    "error": gettext("ordered_ids must contain integers only."),
+                },
+                status=400,
+            )
+
+        try:
+            reorder_services(location, normalized_ids)
+        except ValidationError as exc:
+            message = "; ".join(exc.messages) if hasattr(exc, "messages") else str(exc)
+            return JsonResponse({"ok": False, "error": message}, status=400)
+
+        return JsonResponse({"ok": True})
 
     def _workspace_service_or_none(
         self,

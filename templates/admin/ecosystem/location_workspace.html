@@ -1,5 +1,5 @@
 {% extends "admin/base_site.html" %}
-{% load i18n %}
+{% load i18n static %}
 
 {% block title %}{{ title }} | {{ site_title|default:_('Django site admin') }}{% endblock %}
 
@@ -91,6 +91,53 @@
   .eco-badge-hidden { background: #f4f4f4; color: #666; }
   .eco-nav-links { margin-top: 0.75rem; }
   .eco-nav-links a { margin-right: 0.75rem; }
+  .eco-drag-col { width: 2.5rem; }
+  .eco-drag-handle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    border: 1px solid var(--hairline-color, #ccc);
+    border-radius: 4px;
+    background: var(--darkened-bg, #f5f5f5);
+    color: var(--body-quiet-color, #666);
+    cursor: grab;
+    font-size: 1rem;
+    line-height: 1;
+  }
+  .eco-drag-handle:focus {
+    outline: 2px solid var(--link-fg, #447e9b);
+    outline-offset: 2px;
+  }
+  .eco-drag-handle:active { cursor: grabbing; }
+  .eco-sortable-ghost { opacity: 0.45; background: var(--darkened-bg, #f0f0f0); }
+  .eco-sortable-chosen { background: var(--selected-bg, #ffc); }
+  .eco-sortable-drag { opacity: 0.95; }
+  .eco-reorder-status {
+    min-height: 1.25rem;
+    margin: 0 0 0.75rem;
+    font-size: 0.9rem;
+  }
+  .eco-reorder-status.eco-status-ok { color: #0b6b2f; }
+  .eco-reorder-status.eco-status-error { color: #ba2121; }
+  .eco-order-hint {
+    margin: 0 0 0.75rem;
+    color: var(--body-quiet-color, #666);
+    font-size: 0.9rem;
+  }
+  .eco-workspace .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
 </style>
 
 <div class="eco-workspace" id="content-main">
@@ -139,9 +186,22 @@
     <h2>{% translate 'Services' %} ({{ services|length }})</h2>
 
     {% if services %}
+      <p class="eco-order-hint">
+        {% translate 'Drag rows to reorder, or use the move buttons. Move buttons work without JavaScript.' %}
+      </p>
+      <p
+        id="eco-reorder-status"
+        class="eco-reorder-status"
+        role="status"
+        aria-live="polite"
+        data-saving-label="{% translate 'Saving order…' %}"
+        data-saved-label="{% translate 'Order saved.' %}"
+        data-error-label="{% translate 'Could not save order.' %}"
+      ></p>
       <table class="eco-table">
         <thead>
           <tr>
+            <th class="eco-drag-col"><span class="sr-only">{% translate 'Reorder' %}</span></th>
             <th>{% translate 'Order' %}</th>
             <th>{% translate 'Name' %}</th>
             <th>{% translate 'URL' %}</th>
@@ -149,10 +209,21 @@
             <th>{% translate 'Actions' %}</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody
+          id="eco-sortable-services"
+          data-reorder-url="{{ reorder_url }}"
+        >
           {% for service in services %}
-            <tr>
-              <td>{{ forloop.counter }}</td>
+            <tr data-service-id="{{ service.pk }}" data-id="{{ service.pk }}">
+              <td class="eco-drag-col">
+                <button
+                  type="button"
+                  class="eco-drag-handle"
+                  aria-label="{% blocktranslate with name=service.name %}Drag to reorder {{ name }}{% endblocktranslate %}"
+                  title="{% translate 'Drag to reorder' %}"
+                >⠿</button>
+              </td>
+              <td data-order-label>{{ forloop.counter }}</td>
               <td>
                 <strong>{{ service.name }}</strong>
                 {% if service.logo %}
@@ -192,25 +263,25 @@
                   {% csrf_token %}
                   <input type="hidden" name="service_id" value="{{ service.pk }}">
                   <input type="hidden" name="workspace_action" value="move_top">
-                  <button type="submit" class="button" title="{% translate 'Move to top' %}">⇈</button>
+                  <button type="submit" class="button" title="{% translate 'Move to top' %}" aria-label="{% translate 'Move to top' %}">⇈</button>
                 </form>
                 <form method="post">
                   {% csrf_token %}
                   <input type="hidden" name="service_id" value="{{ service.pk }}">
                   <input type="hidden" name="workspace_action" value="move_up">
-                  <button type="submit" class="button" title="{% translate 'Move up' %}">↑</button>
+                  <button type="submit" class="button" title="{% translate 'Move up' %}" aria-label="{% translate 'Move up' %}">↑</button>
                 </form>
                 <form method="post">
                   {% csrf_token %}
                   <input type="hidden" name="service_id" value="{{ service.pk }}">
                   <input type="hidden" name="workspace_action" value="move_down">
-                  <button type="submit" class="button" title="{% translate 'Move down' %}">↓</button>
+                  <button type="submit" class="button" title="{% translate 'Move down' %}" aria-label="{% translate 'Move down' %}">↓</button>
                 </form>
                 <form method="post">
                   {% csrf_token %}
                   <input type="hidden" name="service_id" value="{{ service.pk }}">
                   <input type="hidden" name="workspace_action" value="move_bottom">
-                  <button type="submit" class="button" title="{% translate 'Move to bottom' %}">⇊</button>
+                  <button type="submit" class="button" title="{% translate 'Move to bottom' %}" aria-label="{% translate 'Move to bottom' %}">⇊</button>
                 </form>
 
                 <form method="post" onsubmit="return confirm('{% translate 'Delete this service?' %}');">
@@ -248,4 +319,8 @@
     });
   })();
 </script>
+{% if services %}
+<script src="{% static 'ecosystem/vendor/Sortable.min.js' %}"></script>
+<script src="{% static 'ecosystem/workspace_sortable.js' %}"></script>
+{% endif %}
 {% endblock %}
