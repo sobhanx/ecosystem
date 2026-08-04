@@ -49,26 +49,28 @@ The `sample_services` fixture creates:
 Use the footer **Careers** row to see inactive services omitted from the public
 template while remaining visible in the workspace.
 
-## Persian Admin (optional)
+## Persian Admin
 
-Demo defaults to English (`LANGUAGE_CODE = "en-us"`) so everyday development
-stays predictable. To preview the Persian Admin UI:
+Persian is the **default** Admin language (`LANGUAGE_CODE = "fa"`).
 
-1. In `demo/config/settings.py`, temporarily set:
+Ecosystem ships `locale/fa/LC_MESSAGES/django.mo`. Django’s own Admin catalog
+for `fa` is also used. Activation requires:
 
-   ```python
-   LANGUAGE_CODE = "fa"
-   ```
+1. `USE_I18N = True`
+2. `LANGUAGE_CODE = "fa"` (or LocaleMiddleware selecting `fa`)
+3. `LocaleMiddleware` after `SessionMiddleware` (enabled in this demo)
 
-2. Ensure `USE_I18N = True` (already on).
-3. Restart `runserver` and open `/admin/`.
-4. Confirm labels such as محل نمایش, سرویس, ترتیب, and workspace wording.
+To temporarily use English Admin without editing settings, POST to
+`/i18n/setlang/` with `language=en` (Django’s built-in language view), or set
+your browser/session language to English. Restart is not required for the
+cookie-based switch.
 
-Revert `LANGUAGE_CODE` when you are done so package tests and English docs stay
-easy to use.
+Catalog spot-check in a shell:
 
-Alternatively, keep `en-us` and use Django’s language activation in a throwaway
-shell/session when spot-checking catalogs.
+```bash
+cd demo
+python manage.py shell -c "from django.utils import translation; from django.utils.translation import gettext as _; translation.activate('fa'); print(_('Ecosystem'), _('location'), _('Workspace'))"
+```
 
 ## Notes
 
