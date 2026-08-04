@@ -1,0 +1,143 @@
+[
+  {
+    "model": "ecosystem.location",
+    "pk": 1,
+    "fields": {
+      "key": "header",
+      "name": "Header",
+      "description": "Top navigation placement.",
+      "active": true,
+      "position": 0,
+      "created_at": "2026-01-01T00:00:00Z",
+      "updated_at": "2026-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "ecosystem.location",
+    "pk": 2,
+    "fields": {
+      "key": "main",
+      "name": "Main",
+      "description": "Primary content placement.",
+      "active": true,
+      "position": 1,
+      "created_at": "2026-01-01T00:00:00Z",
+      "updated_at": "2026-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "ecosystem.location",
+    "pk": 3,
+    "fields": {
+      "key": "footer",
+      "name": "Footer",
+      "description": "Site footer placement.",
+      "active": true,
+      "position": 2,
+      "created_at": "2026-01-01T00:00:00Z",
+      "updated_at": "2026-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "ecosystem.service",
+    "pk": 1,
+    "fields": {
+      "name": "Academy",
+      "slug": "academy",
+      "description": "Learning portal for courses and workshops.",
+      "logo": "",
+      "url": "https://academy.example.com",
+      "location": 1,
+      "position": 0,
+      "active": true,
+      "open_in_new_tab": true,
+      "created_at": "2026-01-01T00:00:00Z",
+      "updated_at": "2026-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "ecosystem.service",
+    "pk": 2,
+    "fields": {
+      "name": "Shop",
+      "slug": "shop",
+      "description": "Product catalog and checkout.",
+      "logo": "",
+      "url": "https://shop.example.com",
+      "location": 1,
+      "position": 1,
+      "active": true,
+      "open_in_new_tab": true,
+      "created_at": "2026-01-01T00:00:00Z",
+      "updated_at": "2026-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "ecosystem.service",
+    "pk": 3,
+    "fields": {
+      "name": "Documentation",
+      "slug": "documentation",
+      "description": "Product docs and API reference.",
+      "logo": "",
+      "url": "https://docs.example.com",
+      "location": 2,
+      "position": 0,
+      "active": true,
+      "open_in_new_tab": true,
+      "created_at": "2026-01-01T00:00:00Z",
+      "updated_at": "2026-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "ecosystem.service",
+    "pk": 4,
+    "fields": {
+      "name": "Support",
+      "slug": "support",
+      "description": "Help center and ticket portal.",
+      "logo": "",
+      "url": "https://support.example.com",
+      "location": 2,
+      "position": 1,
+      "active": true,
+      "open_in_new_tab": true,
+      "created_at": "2026-01-01T00:00:00Z",
+      "updated_at": "2026-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "ecosystem.service",
+    "pk": 5,
+    "fields": {
+      "name": "Blog",
+      "slug": "blog",
+      "description": "Company news and long-form articles.",
+      "logo": "",
+      "url": "https://blog.example.com",
+      "location": 3,
+      "position": 0,
+      "active": true,
+      "open_in_new_tab": true,
+      "created_at": "2026-01-01T00:00:00Z",
+      "updated_at": "2026-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "ecosystem.service",
+    "pk": 6,
+    "fields": {
+      "name": "Status",
+      "slug": "status",
+      "description": "Public uptime and incident status page.",
+      "logo": "",
+      "url": "https://status.example.com",
+      "location": 3,
+      "position": 1,
+      "active": true,
+      "open_in_new_tab": false,
+      "created_at": "2026-01-01T00:00:00Z",
+      "updated_at": "2026-01-01T00:00:00Z"
+    }
+  }
+]

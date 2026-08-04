@@ -196,6 +196,7 @@ ecosystem/                  # repository root (importable Django app)
   tests/                    # Package test suite (not installed)
   scripts/
     runtests.py             # Standalone test runner
+  demo/                     # Local development Django project (not packaged)
 ```
 
 ## Running package tests
@@ -205,6 +206,56 @@ From the repository root:
 ```bash
 python scripts/runtests.py
 ```
+
+## Development
+
+This repository includes a local **demo Django project** under `demo/` for
+manual QA, admin preview, template preview, and documentation screenshots.
+The demo is **not** part of the distributed package.
+
+### Setup
+
+From the repository root:
+
+```bash
+python -m venv .venv
+source .venv/bin/activate   # Windows: .venv\Scripts\activate
+pip install -e .
+```
+
+`demo/manage.py` also puts the repository parent on `sys.path`, so the local
+`ecosystem` package is used even without an editable install (Django and Pillow
+must still be installed).
+
+### Run the demo
+
+```bash
+cd demo
+python manage.py migrate
+python manage.py loaddata sample_services
+python manage.py ensuresuperuser
+python manage.py runserver
+```
+
+Then open:
+
+- Homepage preview: http://127.0.0.1:8000/
+- Django Admin: http://127.0.0.1:8000/admin/
+
+Default demo superuser (created only when none exists):
+
+- Username: `admin`
+- Password: `admin`
+
+Override credentials if needed:
+
+```bash
+python manage.py ensuresuperuser --username alice --email alice@example.com --password secret
+```
+
+The homepage renders `{% ecosystem "header" %}`, `{% ecosystem "main" %}`, and
+`{% ecosystem "footer" %}` so you can edit services in Admin and refresh the
+page to preview placements.
 
 ## License
 

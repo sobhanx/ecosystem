@@ -1,4 +1,7 @@
-"""Django Admin configuration for ecosystem services."""
+"""Django Admin configuration for ecosystem locations and services.
+
+Step 1 keeps standard ModelAdmin surfaces. Location workspace UX comes later.
+"""
 
 from __future__ import annotations
 
@@ -10,7 +13,37 @@ from django.utils.translation import gettext_lazy as _
 from django.utils.translation import ngettext
 
 from .forms import ServiceAdminForm
-from .models import Service
+from .models import Location, Service
+
+
+@admin.register(Location)
+class LocationAdmin(admin.ModelAdmin):
+    """Basic admin for placements. Workspace UI is intentionally deferred."""
+
+    list_display = ("name", "key", "active", "position", "updated_at")
+    list_display_links = ("name",)
+    list_editable = ("active", "position")
+    list_filter = ("active",)
+    search_fields = ("name", "key", "description")
+    ordering = ("position", "name")
+    readonly_fields = ("created_at", "updated_at")
+    list_per_page = 50
+
+    fieldsets = (
+        (
+            None,
+            {
+                "fields": ("name", "key", "description", "active", "position"),
+            },
+        ),
+        (
+            _("Timestamps"),
+            {
+                "classes": ("collapse",),
+                "fields": ("created_at", "updated_at"),
+            },
+        ),
+    )
 
 
 @admin.register(Service)
@@ -22,16 +55,24 @@ class ServiceAdmin(admin.ModelAdmin):
         "logo_thumbnail",
         "name",
         "location",
-        "display_order",
+        "position",
         "active",
         "open_in_new_tab",
         "updated_at",
     )
     list_display_links = ("name",)
-    list_editable = ("display_order", "active")
+    list_editable = ("position", "active")
     list_filter = ("active", "open_in_new_tab", "location", "updated_at")
-    search_fields = ("name", "slug", "url", "location", "description")
-    ordering = ("display_order", "name")
+    search_fields = (
+        "name",
+        "slug",
+        "url",
+        "location__key",
+        "location__name",
+        "description",
+    )
+    ordering = ("location__position", "position", "name")
+    autocomplete_fields = ("location",)
     prepopulated_fields = {"slug": ("name",)}
     readonly_fields = ("logo_preview", "created_at", "updated_at")
     list_per_page = 25
@@ -53,10 +94,10 @@ class ServiceAdmin(admin.ModelAdmin):
         (
             _("Placement"),
             {
-                "fields": ("location", "display_order", "active"),
+                "fields": ("location", "position", "active"),
                 "description": _(
                     "Control where the service appears and whether it is "
-                    "visible. Placement keys must match the value passed to "
+                    "visible. The location key must match the value passed to "
                     "the ecosystem template tag."
                 ),
             },

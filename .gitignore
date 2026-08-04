@@ -28,6 +28,11 @@ local_settings.py
 db.sqlite3
 media/
 
+# Demo project runtime artifacts
+demo/db.sqlite3
+demo/media/
+demo/staticfiles/
+
 # IDE / OS
 .idea/
 .vscode/

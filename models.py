@@ -1,4 +1,4 @@
-"""Data models for ecosystem services."""
+"""Data models for ecosystem locations and services."""
 
 from __future__ import annotations
 
@@ -10,18 +10,93 @@ from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 
 
+class Location(models.Model):
+    """
+    Named placement for ecosystem services (for example Footer or Header).
+
+    ``key`` is the stable identifier used by ``{% ecosystem "key" %}``.
+    """
+
+    key = models.CharField(
+        _("key"),
+        max_length=100,
+        unique=True,
+        help_text=_(
+            'Stable template-tag identifier (for example "footer" or '
+            '"pricing_page"). Prefer leaving this unchanged after creation.'
+        ),
+    )
+    name = models.CharField(
+        _("name"),
+        max_length=150,
+        help_text=_(
+            'Human-readable label shown in admin (for example "Footer").'
+        ),
+    )
+    description = models.TextField(
+        _("description"),
+        blank=True,
+        help_text=_("Optional notes for editors about this placement."),
+    )
+    active = models.BooleanField(
+        _("active"),
+        default=True,
+        help_text=_(
+            "Uncheck to hide every service in this placement without "
+            "deleting them."
+        ),
+    )
+    position = models.PositiveIntegerField(
+        _("position"),
+        default=0,
+        help_text=_("Order of this location in admin lists. Lower comes first."),
+    )
+    created_at = models.DateTimeField(_("created at"), auto_now_add=True)
+    updated_at = models.DateTimeField(_("updated at"), auto_now=True)
+
+    class Meta:
+        verbose_name = _("location")
+        verbose_name_plural = _("locations")
+        ordering = ("position", "name")
+        constraints = [
+            models.CheckConstraint(
+                condition=~Q(key=""),
+                name="ecosystem_location_key_not_empty",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return self.name
+
+    def save(self, *args: Any, **kwargs: Any) -> None:
+        """Normalize the location key before saving."""
+        self.key = self.key.strip()
+        if not self.name.strip():
+            self.name = self.key
+        else:
+            self.name = self.name.strip()
+        super().save(*args, **kwargs)
+
+
 class Service(models.Model):
     """
     External service belonging to the same product ecosystem.
 
     Administrators register sibling sites (academy, shop, blog, dashboard,
-    and so on). Templates render them by free-form ``location`` key via the
+    and so on). Templates render them by location ``key`` via the
     ``{% ecosystem %}`` inclusion tag.
-
-    Location keys are arbitrary strings. Adding a new placement never requires
-    code changes—only a new admin value and a matching template tag call.
     """
 
+    location = models.ForeignKey(
+        Location,
+        verbose_name=_("location"),
+        related_name="services",
+        on_delete=models.PROTECT,
+        help_text=_(
+            "Placement this service belongs to. Must match a location key "
+            "used in the ecosystem template tag."
+        ),
+    )
     name = models.CharField(
         _("name"),
         max_length=150,
@@ -63,21 +138,12 @@ class Service(models.Model):
             "(for example https://academy.example.com)."
         ),
     )
-    location = models.CharField(
-        _("location"),
-        max_length=100,
-        help_text=_(
-            "Placement key matched exactly by the template tag. "
-            "Prefer choosing a known key in admin; new keys stay allowed "
-            '(examples: "footer", "pricing_page").'
-        ),
-    )
-    display_order = models.PositiveIntegerField(
-        _("display order"),
+    position = models.PositiveIntegerField(
+        _("position"),
         default=0,
         help_text=_(
-            "Controls the order within the same placement. "
-            "Smaller numbers appear first."
+            "Order within the location. Maintained by the application; "
+            "lower values appear first."
         ),
     )
     active = models.BooleanField(
@@ -98,21 +164,18 @@ class Service(models.Model):
     class Meta:
         verbose_name = _("service")
         verbose_name_plural = _("services")
-        ordering = ("display_order", "name")
+        ordering = ("position", "name")
         indexes = [
-            # Admin list_filter / lookups by placement key alone.
-            models.Index(fields=["location"], name="ecosystem_svc_location_idx"),
-            # Hot path: active services for a location, already sorted.
             models.Index(
-                fields=["active", "location", "display_order", "name"],
-                name="ecosystem_svc_lookup_idx",
+                fields=["location", "position"],
+                name="ecosystem_svc_loc_pos_idx",
+            ),
+            models.Index(
+                fields=["location", "active", "position"],
+                name="ecosystem_svc_loc_active_idx",
             ),
         ]
         constraints = [
-            models.CheckConstraint(
-                condition=~Q(location=""),
-                name="ecosystem_svc_location_not_empty",
-            ),
             models.CheckConstraint(
                 condition=~Q(slug=""),
                 name="ecosystem_svc_slug_not_empty",
@@ -123,8 +186,7 @@ class Service(models.Model):
         return self.name
 
     def save(self, *args: Any, **kwargs: Any) -> None:
-        """Normalize fields and generate a slug when the field is empty."""
-        self.location = self.location.strip()
+        """Generate a slug when the field is empty."""
         if not self.slug:
             self.slug = self._build_unique_slug()
         super().save(*args, **kwargs)

@@ -6,7 +6,7 @@ from django import template
 from django.db.models import QuerySet
 
 from ..models import Service
-from ..services import get_active_services
+from ..selectors import get_active_services
 
 register = template.Library()
 

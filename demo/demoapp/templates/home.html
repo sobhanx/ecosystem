@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Ecosystem demo</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --ink: #1a1a1a;
+        --muted: #5c5c5c;
+        --line: #e4e4e4;
+        --bg: #f7f7f5;
+        --panel: #ffffff;
+        --accent: #0b5fff;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+        color: var(--ink);
+        background: linear-gradient(180deg, #fafaf8 0%, var(--bg) 100%);
+        min-height: 100vh;
+      }
+      .wrap {
+        max-width: 880px;
+        margin: 0 auto;
+        padding: 2rem 1.25rem 3rem;
+      }
+      header.site {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 1rem;
+        padding-bottom: 1.25rem;
+        border-bottom: 1px solid var(--line);
+      }
+      .brand {
+        font-size: 1.5rem;
+        font-weight: 650;
+        letter-spacing: -0.02em;
+      }
+      .meta {
+        color: var(--muted);
+        font-size: 0.95rem;
+      }
+      .meta a { color: var(--accent); }
+      section {
+        margin-top: 2rem;
+        padding: 1.25rem 1.35rem;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+      }
+      h2 {
+        margin: 0 0 0.35rem;
+        font-size: 1.05rem;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+      p.hint {
+        margin: 0 0 1rem;
+        color: var(--muted);
+        font-size: 0.92rem;
+      }
+      .ecosystem-services {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem 1rem;
+      }
+      .ecosystem-service a {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.55rem 0.8rem;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        text-decoration: none;
+        color: var(--ink);
+        background: #fbfbfa;
+      }
+      .ecosystem-service a:hover {
+        border-color: #c9d7ff;
+        background: #f3f6ff;
+      }
+      .ecosystem-service img {
+        width: 28px;
+        height: 28px;
+        object-fit: contain;
+      }
+      footer.site {
+        margin-top: 2.5rem;
+        padding-top: 1rem;
+        border-top: 1px solid var(--line);
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+    </style>
+  </head>
+  <body>
+    {% load ecosystem %}
+    <div class="wrap">
+      <header class="site">
+        <div class="brand">Ecosystem demo</div>
+        <p class="meta">
+          Local preview ·
+          <a href="/admin/">Django Admin</a>
+        </p>
+      </header>
+
+      <section>
+        <h2>Header</h2>
+        <p class="hint">Services with location key <code>header</code></p>
+        {% ecosystem "header" %}
+      </section>
+
+      <section>
+        <h2>Main</h2>
+        <p class="hint">Services with location key <code>main</code></p>
+        {% ecosystem "main" %}
+      </section>
+
+      <section>
+        <h2>Footer</h2>
+        <p class="hint">Services with location key <code>footer</code></p>
+        {% ecosystem "footer" %}
+      </section>
+
+      <footer class="site">
+        Development-only project. Not included in the published package.
+      </footer>
+    </div>
+  </body>
+</html>
