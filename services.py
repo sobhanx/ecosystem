@@ -16,7 +16,7 @@ from django.db.models import QuerySet
 from django.utils import timezone
 
 from .models import Location, Service
-from .lookups import get_active_services
+from .lookups import SERVICE_ORDER, get_active_services, get_services_for_location
 
 __all__ = [
     "get_active_services",
@@ -26,6 +26,7 @@ __all__ = [
     "duplicate_service",
     "duplicate_services",
     "set_services_active",
+    "set_locations_active",
     "delete_service",
     "move_service_up",
     "move_service_down",
@@ -33,12 +34,9 @@ __all__ = [
     "move_service_to_bottom",
 ]
 
-# Canonical service order within a location.
-SERVICE_ORDER = ("position", "pk")
-
 
 def _services_for_location(location: Location) -> QuerySet[Service]:
-    return Service.objects.filter(location=location).order_by(*SERVICE_ORDER)
+    return get_services_for_location(location)
 
 
 def _lock_location(location: Location) -> Location:
@@ -287,6 +285,20 @@ def set_services_active(
     if not ids:
         return 0
     return Service.objects.filter(pk__in=ids).update(active=active)
+
+
+def set_locations_active(
+    locations: Iterable[Location] | QuerySet[Location],
+    active: bool,
+) -> int:
+    """Set ``active`` on the given locations. Returns the number of rows updated."""
+    if isinstance(locations, QuerySet):
+        return locations.update(active=active)
+
+    ids = [location.pk for location in locations if location.pk is not None]
+    if not ids:
+        return 0
+    return Location.objects.filter(pk__in=ids).update(active=active)
 
 
 @transaction.atomic

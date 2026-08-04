@@ -5,7 +5,6 @@ from __future__ import annotations
 from typing import Any
 
 from django import forms
-from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 
 from .models import Service
@@ -67,14 +66,8 @@ class ServiceAdminForm(forms.ModelForm):
             cleaned["slug"] = slug
             return cleaned
 
-        base = slugify(cleaned.get("name") or "") or "service"
-        candidate = base
-        suffix = 2
-        queryset = Service.objects.all()
-        if self.instance.pk is not None:
-            queryset = queryset.exclude(pk=self.instance.pk)
-        while queryset.filter(slug=candidate).exists():
-            candidate = f"{base}-{suffix}"
-            suffix += 1
-        cleaned["slug"] = candidate
+        cleaned["slug"] = Service.build_unique_slug(
+            cleaned.get("name") or "",
+            exclude_pk=self.instance.pk,
+        )
         return cleaned

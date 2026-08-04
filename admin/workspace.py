@@ -14,10 +14,16 @@ from django.utils.translation import gettext_lazy as _
 from django.utils.translation import ngettext
 
 from ..forms import WorkspaceQuickAddForm
+from ..lookups import (
+    get_location_services_by_ids,
+    get_service_for_location,
+    get_services_for_location,
+)
 from ..models import Location, Service
 from ..services import (
     delete_service,
     duplicate_service,
+    duplicate_services,
     move_service_down,
     move_service_to_bottom,
     move_service_to_top,
@@ -113,9 +119,7 @@ class LocationWorkspaceMixin:
         *,
         quick_add_form: WorkspaceQuickAddForm | None = None,
     ) -> HttpResponse:
-        services = list(
-            Service.objects.filter(location=location).order_by("position", "pk")
-        )
+        services = list(get_services_for_location(location))
         other_locations = list(
             self.get_queryset(request)
             .exclude(pk=location.pk)
@@ -212,11 +216,7 @@ class LocationWorkspaceMixin:
         except (TypeError, ValueError):
             self.message_user(request, _("Invalid service selection."), messages.ERROR)
             return None
-        services = list(
-            Service.objects.filter(location=location, pk__in=ids).order_by(
-                "position", "pk"
-            )
-        )
+        services = get_location_services_by_ids(location, ids)
         if len(services) != len(set(ids)):
             self.message_user(
                 request,
@@ -264,8 +264,7 @@ class LocationWorkspaceMixin:
             )
             return
         if action == "bulk_duplicate":
-            for service in services:
-                duplicate_service(service)
+            duplicate_services(services)
             self.message_user(
                 request,
                 ngettext(
@@ -331,15 +330,15 @@ class LocationWorkspaceMixin:
         if not service_id:
             self.message_user(request, _("Missing service."), messages.ERROR)
             return None
-        try:
-            return Service.objects.get(pk=service_id, location=location)
-        except Service.DoesNotExist:
+        service = get_service_for_location(location, service_id)
+        if service is None:
             self.message_user(
                 request,
                 _("That service does not belong to this location."),
                 messages.ERROR,
             )
             return None
+        return service
 
     def _handle_workspace_service_action(
         self,

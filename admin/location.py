@@ -10,6 +10,7 @@ from django.utils.translation import gettext_lazy as _
 from django.utils.translation import ngettext
 
 from ..models import Location
+from ..services import set_locations_active
 from .helpers import boolean_badge, workspace_url
 from .workspace import LocationWorkspaceMixin
 
@@ -154,7 +155,7 @@ class LocationAdmin(LocationWorkspaceMixin, admin.ModelAdmin):
         request: HttpRequest,
         queryset: QuerySet[Location],
     ) -> None:
-        updated = queryset.update(active=True)
+        updated = set_locations_active(queryset, True)
         self.message_user(
             request,
             ngettext(
@@ -172,7 +173,7 @@ class LocationAdmin(LocationWorkspaceMixin, admin.ModelAdmin):
         request: HttpRequest,
         queryset: QuerySet[Location],
     ) -> None:
-        updated = queryset.update(active=False)
+        updated = set_locations_active(queryset, False)
         self.message_user(
             request,
             ngettext(

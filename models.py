@@ -188,17 +188,26 @@ class Service(models.Model):
     def save(self, *args: Any, **kwargs: Any) -> None:
         """Generate a slug when the field is empty."""
         if not self.slug:
-            self.slug = self._build_unique_slug()
+            self.slug = type(self).build_unique_slug(
+                self.name,
+                exclude_pk=self.pk,
+            )
         super().save(*args, **kwargs)
 
-    def _build_unique_slug(self) -> str:
+    @classmethod
+    def build_unique_slug(
+        cls,
+        name: str,
+        *,
+        exclude_pk: int | None = None,
+    ) -> str:
         """Build a unique slug from ``name`` using Django's ``slugify``."""
-        base_slug = slugify(self.name) or "service"
+        base_slug = slugify(name) or "service"
         candidate = base_slug
         suffix = 2
-        queryset = type(self)._default_manager.all()
-        if self.pk is not None:
-            queryset = queryset.exclude(pk=self.pk)
+        queryset = cls._default_manager.all()
+        if exclude_pk is not None:
+            queryset = queryset.exclude(pk=exclude_pk)
         while queryset.filter(slug=candidate).exists():
             candidate = f"{base_slug}-{suffix}"
             suffix += 1
