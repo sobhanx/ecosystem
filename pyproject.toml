@@ -36,12 +36,18 @@ dependencies = [
 ]
 
 [tool.setuptools]
-packages = ["ecosystem", "ecosystem.migrations", "ecosystem.templatetags"]
+packages = [
+    "ecosystem",
+    "ecosystem.migrations",
+    "ecosystem.templatetags",
+    "ecosystem.admin",
+]
 
 [tool.setuptools.package-dir]
 ecosystem = "."
 "ecosystem.migrations" = "migrations"
 "ecosystem.templatetags" = "templatetags"
+"ecosystem.admin" = "admin"
 
 [tool.setuptools.package-data]
 ecosystem = [
