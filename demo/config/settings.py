@@ -29,8 +29,9 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
-    # Required for request-language activation (cookie / Accept-Language).
-    "django.middleware.locale.LocaleMiddleware",
+    # Intentionally no LocaleMiddleware: it would honor browser
+    # Accept-Language (usually en-*) and override LANGUAGE_CODE=fa for
+    # /admin/ requests. Persian is the fixed Admin language for this demo.
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -77,12 +78,13 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
 
-# Persian is the primary Admin language for this product laboratory.
-# LocaleMiddleware still allows switching via cookie / Accept-Language.
+# Persian is the primary (and fixed) Admin language for this product laboratory.
+# Do not enable LocaleMiddleware here: browsers typically send
+# Accept-Language: en-US, which would activate English for /admin/ even when
+# LANGUAGE_CODE is fa. Shell translation checks are not affected by that header.
 LANGUAGE_CODE = "fa"
 LANGUAGES = [
     ("fa", "Persian"),
-    ("en", "English"),
 ]
 
 TIME_ZONE = "UTC"

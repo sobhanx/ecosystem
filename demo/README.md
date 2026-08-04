@@ -51,26 +51,33 @@ template while remaining visible in the workspace.
 
 ## Persian Admin
 
-Persian is the **default** Admin language (`LANGUAGE_CODE = "fa"`).
+Persian is the **fixed** Admin language (`LANGUAGE_CODE = "fa"`).
 
 Ecosystem ships `locale/fa/LC_MESSAGES/django.mo`. Django’s own Admin catalog
-for `fa` is also used. Activation requires:
+for `fa` is also used.
+
+Activation requirements:
 
 1. `USE_I18N = True`
-2. `LANGUAGE_CODE = "fa"` (or LocaleMiddleware selecting `fa`)
-3. `LocaleMiddleware` after `SessionMiddleware` (enabled in this demo)
+2. `LANGUAGE_CODE = "fa"`
+3. **Do not** enable `LocaleMiddleware` in this demo unless you intentionally
+   want browser `Accept-Language` (usually `en-US`) to override Persian for
+   `/admin/` requests. That mismatch is why the shell can show Persian while
+   Admin stays English.
 
-To temporarily use English Admin without editing settings, POST to
-`/i18n/setlang/` with `language=en` (Django’s built-in language view), or set
-your browser/session language to English. Restart is not required for the
-cookie-based switch.
+There is no `/fa/admin/` prefix: the demo does not use `i18n_patterns`.
+Language comes from `LANGUAGE_CODE`, not from the URL path.
 
-Catalog spot-check in a shell:
+Catalog spot-check:
 
 ```bash
 cd demo
-python manage.py shell -c "from django.utils import translation; from django.utils.translation import gettext as _; translation.activate('fa'); print(_('Ecosystem'), _('location'), _('Workspace'))"
+python manage.py shell -c "from django.utils.translation import gettext as _; print(_('Ecosystem'), _('location'), _('Add'))"
 ```
+
+After changing language settings, restart `runserver` and use a fresh browser
+tab (clear `django_language` cookie if an old English cookie remains from an
+earlier LocaleMiddleware experiment).
 
 ## Notes
 
