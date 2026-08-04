@@ -35,9 +35,9 @@ The package makes no assumptions about the host beyond standard Django settings
 Prefer an exact version pin from a freshly built wheel or your internal index:
 
 ```bash
-pip install ecosystem==2.2.0
+pip install ecosystem==2.2.1
 # or from a path / wheel file
-pip install /path/to/ecosystem-2.2.0-py3-none-any.whl
+pip install /path/to/ecosystem-2.2.1-py3-none-any.whl
 ```
 
 ```python
@@ -85,6 +85,18 @@ Only **active** services on an **active** location are returned, ordered by
 position then primary key. Missing or inactive locations render an empty list.
 
 Legacy alias (still supported): `{% ecosystem_services "footer" %}`.
+
+Preferred Python read API:
+
+```python
+from ecosystem.lookups import get_active_services
+```
+
+Compatibility re-export (still supported):
+
+```python
+from ecosystem.services import get_active_services
+```
 
 ### Configuration
 

@@ -74,6 +74,16 @@ services  →  admin
 - Admin orchestrates only
 - Do not put ordering logic in `Model.save()`
 
+Public compatibility surfaces hosts may import:
+
+```python
+from ecosystem.lookups import get_active_services   # preferred
+from ecosystem.services import get_active_services  # re-export
+from ecosystem.admin import LocationAdmin, ServiceAdmin
+```
+
+Template contract remains `{% ecosystem "footer" %}`.
+
 ## Release process
 
 1. Ensure `python scripts/runtests.py` is green.
