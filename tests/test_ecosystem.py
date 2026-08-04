@@ -373,6 +373,68 @@ class ServiceAdminFormTests(TestCase):
         form = ServiceAdminForm()
         self.assertIn(footer, form.fields["location"].queryset)
         self.assertEqual(str(form.fields["location"].label), "Placement")
+        self.assertNotIn("position", form.fields)
+
+
+class LocationAdminTests(TestCase):
+    """Tests for Location-first admin configuration."""
+
+    def setUp(self) -> None:
+        from django.contrib.admin.sites import site
+
+        from ecosystem.admin import LocationAdmin
+
+        self.admin = LocationAdmin(Location, site)
+        self.footer = make_location("footer", name="Footer")
+        Service.objects.create(
+            name="Shop",
+            url="https://shop.example.com",
+            location=self.footer,
+            active=True,
+        )
+        Service.objects.create(
+            name="Legacy",
+            url="https://legacy.example.com",
+            location=self.footer,
+            active=False,
+        )
+
+    def test_list_display_includes_counts_and_manage_link(self) -> None:
+        self.assertEqual(
+            self.admin.list_display,
+            (
+                "name",
+                "key",
+                "active_badge",
+                "service_count",
+                "active_service_count",
+                "manage_services_link",
+                "updated_at",
+            ),
+        )
+        self.assertIn("activate_locations", self.admin.actions)
+        self.assertIn("deactivate_locations", self.admin.actions)
+
+    def test_queryset_annotates_service_counts(self) -> None:
+        from django.test import RequestFactory
+
+        request = RequestFactory().get("/")
+        qs = self.admin.get_queryset(request)
+        location = qs.get(pk=self.footer.pk)
+        self.assertEqual(location._service_count, 2)
+        self.assertEqual(location._active_service_count, 1)
+        self.assertEqual(self.admin.service_count(location), 2)
+        self.assertEqual(self.admin.active_service_count(location), 1)
+
+    def test_manage_services_link_points_at_filtered_changelist(self) -> None:
+        html = self.admin.manage_services_link(self.footer)
+        self.assertIn("location__id__exact=", html)
+        self.assertIn(str(self.footer.pk), html)
+        self.assertIn("Manage services", html)
+
+    def test_template_tag_snippet(self) -> None:
+        html = self.admin.template_tag_snippet(self.footer)
+        self.assertIn('{% ecosystem "footer" %}', html)
 
 
 class ServiceAdminTests(TestCase):
@@ -393,7 +455,7 @@ class ServiceAdminTests(TestCase):
         self.admin = ServiceAdmin(Service, site)
         self.footer = make_location("footer")
 
-    def test_activate_and_deactivate_actions(self) -> None:
+    def test_activate_and_deactivate_actions_use_service_layer(self) -> None:
         active = Service.objects.create(
             name="Active",
             url="https://active.example.com",
@@ -420,6 +482,22 @@ class ServiceAdminTests(TestCase):
         )
         inactive.refresh_from_db()
         self.assertTrue(inactive.active)
+
+    def test_duplicate_action_appends_copy(self) -> None:
+        service = Service.objects.create(
+            name="Shop",
+            url="https://shop.example.com",
+            location=self.footer,
+            position=0,
+        )
+        self.admin.duplicate_services(
+            request=self._request(),
+            queryset=Service.objects.filter(pk=service.pk),
+        )
+        self.assertEqual(Service.objects.filter(location=self.footer).count(), 2)
+        copy = Service.objects.filter(location=self.footer).exclude(pk=service.pk).get()
+        self.assertEqual(copy.name, "Shop")
+        self.assertEqual(copy.position, 1)
 
     def test_logo_preview_without_logo_is_dash(self) -> None:
         service = Service.objects.create(
@@ -450,26 +528,57 @@ class ServiceAdminTests(TestCase):
         self.assertIn("ecosystem/services/", html)
         self.assertIn("object-fit:contain", html)
 
-    def test_admin_list_configuration(self) -> None:
+    def test_admin_list_configuration_is_secondary(self) -> None:
         self.assertEqual(
             self.admin.list_display,
             (
                 "logo_thumbnail",
                 "name",
-                "location",
-                "position",
-                "active",
-                "open_in_new_tab",
+                "location_link",
+                "url_link",
+                "active_badge",
+                "new_tab_badge",
                 "updated_at",
             ),
         )
-        self.assertEqual(self.admin.list_editable, ("position", "active"))
-        self.assertIn("active", self.admin.list_filter)
-        self.assertIn("location", self.admin.list_filter)
-        self.assertIn("name", self.admin.search_fields)
-        self.assertIn("location__key", self.admin.search_fields)
+        self.assertFalse(getattr(self.admin, "list_editable", ()))
+        self.assertIn("position", self.admin.readonly_fields)
+        self.assertNotIn("position", self.admin.list_display)
         self.assertIn("activate_services", self.admin.actions)
         self.assertIn("deactivate_services", self.admin.actions)
+        self.assertIn("duplicate_services", self.admin.actions)
+
+    def test_save_model_appends_new_service(self) -> None:
+        from ecosystem.forms import ServiceAdminForm
+
+        Service.objects.create(
+            name="Existing",
+            url="https://existing.example.com",
+            location=self.footer,
+            position=0,
+        )
+        obj = Service(
+            name="New",
+            url="https://new.example.com",
+            location=self.footer,
+            active=True,
+            open_in_new_tab=True,
+        )
+        form = ServiceAdminForm(
+            data={
+                "name": "New",
+                "url": "https://new.example.com",
+                "location": self.footer.pk,
+                "description": "",
+                "slug": "",
+                "active": True,
+                "open_in_new_tab": True,
+            }
+        )
+        self.assertTrue(form.is_valid(), form.errors)
+        self.admin.save_model(self._request(), obj, form, change=False)
+        created = Service.objects.get(pk=obj.pk)
+        self.assertEqual(created.position, 1)
 
     def _request(self):
         from django.contrib.messages.storage.fallback import FallbackStorage
