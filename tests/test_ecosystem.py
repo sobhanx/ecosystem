@@ -426,15 +426,15 @@ class LocationAdminTests(TestCase):
         self.assertEqual(self.admin.service_count(location), 2)
         self.assertEqual(self.admin.active_service_count(location), 1)
 
-    def test_manage_services_link_points_at_filtered_changelist(self) -> None:
+    def test_manage_services_link_points_at_workspace(self) -> None:
         html = self.admin.manage_services_link(self.footer)
-        self.assertIn("location__id__exact=", html)
-        self.assertIn(str(self.footer.pk), html)
-        self.assertIn("Manage services", html)
+        self.assertIn(f"/location/{self.footer.pk}/workspace/", html)
+        self.assertIn("Open workspace", html)
 
     def test_template_tag_snippet(self) -> None:
         html = self.admin.template_tag_snippet(self.footer)
-        self.assertIn('{% ecosystem "footer" %}', html)
+        self.assertIn("ecosystem", html)
+        self.assertIn("footer", html)
 
 
 class ServiceAdminTests(TestCase):

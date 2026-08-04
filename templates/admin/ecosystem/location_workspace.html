@@ -1,0 +1,251 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block title %}{{ title }} | {{ site_title|default:_('Django site admin') }}{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">{% translate 'Home' %}</a>
+  &rsaquo; <a href="{% url 'admin:app_list' app_label='ecosystem' %}">{% translate 'Ecosystem' %}</a>
+  &rsaquo; <a href="{% url 'admin:ecosystem_location_changelist' %}">{% translate 'Locations' %}</a>
+  &rsaquo; {{ location.name }}
+  &rsaquo; {% translate 'Workspace' %}
+</div>
+{% endblock %}
+
+{% block content %}
+<style>
+  .eco-workspace { max-width: 960px; }
+  .eco-header {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem 2rem;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--hairline-color, #eee);
+  }
+  .eco-header h1 { margin: 0 0 0.35rem; font-size: 1.4rem; }
+  .eco-meta { color: var(--body-quiet-color, #666); margin: 0.15rem 0; }
+  .eco-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+    flex-wrap: wrap;
+  }
+  .eco-tag code {
+    padding: 0.35rem 0.55rem;
+    background: var(--darkened-bg, #f5f5f5);
+    border-radius: 4px;
+  }
+  .eco-panel {
+    margin: 1.25rem 0;
+    padding: 1rem 1.1rem;
+    background: var(--body-bg, #fff);
+    border: 1px solid var(--hairline-color, #e0e0e0);
+    border-radius: 6px;
+  }
+  .eco-panel h2 {
+    margin: 0 0 0.75rem;
+    font-size: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--body-quiet-color, #666);
+  }
+  .eco-quick-add {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: flex-end;
+  }
+  .eco-quick-add .field { display: flex; flex-direction: column; gap: 0.25rem; min-width: 220px; flex: 1; }
+  .eco-quick-add label { font-weight: 600; font-size: 0.85rem; }
+  .eco-table { width: 100%; border-collapse: collapse; }
+  .eco-table th, .eco-table td {
+    padding: 0.65rem 0.5rem;
+    border-bottom: 1px solid var(--hairline-color, #eee);
+    text-align: left;
+    vertical-align: middle;
+  }
+  .eco-table th { font-size: 0.8rem; color: var(--body-quiet-color, #666); }
+  .eco-actions form { display: inline; }
+  .eco-actions button, .eco-actions .button {
+    margin: 0 0.15rem 0.15rem 0;
+  }
+  .eco-empty {
+    padding: 1.25rem;
+    color: var(--body-quiet-color, #666);
+    background: var(--darkened-bg, #f8f8f8);
+    border-radius: 6px;
+  }
+  .eco-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .eco-badge-active { background: #e7f8ed; color: #0b6b2f; }
+  .eco-badge-hidden { background: #f4f4f4; color: #666; }
+  .eco-nav-links { margin-top: 0.75rem; }
+  .eco-nav-links a { margin-right: 0.75rem; }
+</style>
+
+<div class="eco-workspace" id="content-main">
+  <div class="eco-header">
+    <div>
+      <h1>{{ location.name }}</h1>
+      <p class="eco-meta">{% translate 'Key' %}: <code>{{ location.key }}</code></p>
+      {% if location.active %}
+        <span class="eco-badge eco-badge-active">{% translate 'Active' %}</span>
+      {% else %}
+        <span class="eco-badge eco-badge-hidden">{% translate 'Hidden' %}</span>
+      {% endif %}
+      <div class="eco-tag">
+        <code id="eco-template-tag">{% templatetag openblock %} ecosystem "{{ location.key }}" {% templatetag closeblock %}</code>
+        <button type="button" class="button" id="eco-copy-tag">{% translate 'Copy' %}</button>
+      </div>
+      <div class="eco-nav-links">
+        <a href="{% url 'admin:ecosystem_location_change' location.pk %}">{% translate 'Edit location' %}</a>
+        <a href="{% url 'admin:ecosystem_location_changelist' %}">{% translate 'All locations' %}</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="eco-panel">
+    <h2>{% translate 'Quick add' %}</h2>
+    <form method="post" class="eco-quick-add">
+      {% csrf_token %}
+      <input type="hidden" name="workspace_action" value="quick_add">
+      <div class="field">
+        <label for="{{ quick_add_form.name.id_for_label }}">{{ quick_add_form.name.label }}</label>
+        {{ quick_add_form.name }}
+        {% if quick_add_form.name.errors %}<ul class="errorlist">{{ quick_add_form.name.errors }}</ul>{% endif %}
+      </div>
+      <div class="field">
+        <label for="{{ quick_add_form.url.id_for_label }}">{{ quick_add_form.url.label }}</label>
+        {{ quick_add_form.url }}
+        {% if quick_add_form.url.errors %}<ul class="errorlist">{{ quick_add_form.url.errors }}</ul>{% endif %}
+      </div>
+      <div class="submit-row">
+        <input type="submit" class="default" value="{% translate 'Add' %}">
+      </div>
+    </form>
+  </div>
+
+  <div class="eco-panel">
+    <h2>{% translate 'Services' %} ({{ services|length }})</h2>
+
+    {% if services %}
+      <table class="eco-table">
+        <thead>
+          <tr>
+            <th>{% translate 'Order' %}</th>
+            <th>{% translate 'Name' %}</th>
+            <th>{% translate 'URL' %}</th>
+            <th>{% translate 'Status' %}</th>
+            <th>{% translate 'Actions' %}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for service in services %}
+            <tr>
+              <td>{{ forloop.counter }}</td>
+              <td>
+                <strong>{{ service.name }}</strong>
+                {% if service.logo %}
+                  <div><img src="{{ service.logo.url }}" alt="" style="max-height:24px;max-width:48px;margin-top:4px;"></div>
+                {% endif %}
+              </td>
+              <td>
+                <a href="{{ service.url }}" target="_blank" rel="noopener noreferrer">{{ service.url|truncatechars:42 }}</a>
+              </td>
+              <td>
+                {% if service.active %}
+                  <span class="eco-badge eco-badge-active">{% translate 'Active' %}</span>
+                {% else %}
+                  <span class="eco-badge eco-badge-hidden">{% translate 'Hidden' %}</span>
+                {% endif %}
+              </td>
+              <td class="eco-actions">
+                <a class="button" href="{% url 'admin:ecosystem_service_change' service.pk %}">{% translate 'Edit' %}</a>
+
+                <form method="post">
+                  {% csrf_token %}
+                  <input type="hidden" name="service_id" value="{{ service.pk }}">
+                  <input type="hidden" name="workspace_action" value="toggle_active">
+                  <button type="submit" class="button">
+                    {% if service.active %}{% translate 'Deactivate' %}{% else %}{% translate 'Activate' %}{% endif %}
+                  </button>
+                </form>
+
+                <form method="post">
+                  {% csrf_token %}
+                  <input type="hidden" name="service_id" value="{{ service.pk }}">
+                  <input type="hidden" name="workspace_action" value="duplicate">
+                  <button type="submit" class="button">{% translate 'Duplicate' %}</button>
+                </form>
+
+                <form method="post">
+                  {% csrf_token %}
+                  <input type="hidden" name="service_id" value="{{ service.pk }}">
+                  <input type="hidden" name="workspace_action" value="move_top">
+                  <button type="submit" class="button" title="{% translate 'Move to top' %}">⇈</button>
+                </form>
+                <form method="post">
+                  {% csrf_token %}
+                  <input type="hidden" name="service_id" value="{{ service.pk }}">
+                  <input type="hidden" name="workspace_action" value="move_up">
+                  <button type="submit" class="button" title="{% translate 'Move up' %}">↑</button>
+                </form>
+                <form method="post">
+                  {% csrf_token %}
+                  <input type="hidden" name="service_id" value="{{ service.pk }}">
+                  <input type="hidden" name="workspace_action" value="move_down">
+                  <button type="submit" class="button" title="{% translate 'Move down' %}">↓</button>
+                </form>
+                <form method="post">
+                  {% csrf_token %}
+                  <input type="hidden" name="service_id" value="{{ service.pk }}">
+                  <input type="hidden" name="workspace_action" value="move_bottom">
+                  <button type="submit" class="button" title="{% translate 'Move to bottom' %}">⇊</button>
+                </form>
+
+                <form method="post" onsubmit="return confirm('{% translate 'Delete this service?' %}');">
+                  {% csrf_token %}
+                  <input type="hidden" name="service_id" value="{{ service.pk }}">
+                  <input type="hidden" name="workspace_action" value="delete">
+                  <button type="submit" class="button deletelink">{% translate 'Delete' %}</button>
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <div class="eco-empty">
+        <p>{% translate 'No services in this location yet. Use Quick add above to create the first link.' %}</p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+  (function () {
+    var button = document.getElementById("eco-copy-tag");
+    var tag = document.getElementById("eco-template-tag");
+    if (!button || !tag) return;
+    button.addEventListener("click", function () {
+      var text = tag.textContent || "";
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function () {
+          button.textContent = "{% translate 'Copied' %}";
+          setTimeout(function () { button.textContent = "{% translate 'Copy' %}"; }, 1500);
+        });
+      }
+    });
+  })();
+</script>
+{% endblock %}

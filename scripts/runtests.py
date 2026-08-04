@@ -13,16 +13,16 @@ def main() -> None:
     from django.conf import settings
 
     repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    # The importable package directory is named ``ecosystem``; its parent must
-    # be on ``sys.path`` (for example ``/path/to/work/ecosystem`` → add
-    # ``/path/to/work``).
+    # Flat package layout: parent must be on ``sys.path`` for ``import ecosystem``.
+    # Repo root must be on ``sys.path`` for ``import tests``.
+    sys.path.insert(0, repo_root)
     sys.path.insert(0, os.path.dirname(repo_root))
 
     if not settings.configured:
         settings.configure(
             DEBUG=True,
             SECRET_KEY="ecosystem-test-secret-key-not-for-production",
-            ROOT_URLCONF="ecosystem.urls",
+            ROOT_URLCONF="tests.urls",
             INSTALLED_APPS=[
                 "django.contrib.admin",
                 "django.contrib.auth",

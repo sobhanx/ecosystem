@@ -1,23 +1,34 @@
 """Django Admin configuration for ecosystem locations and services.
 
-Location is the primary editorial surface. ServiceAdmin remains available for
-global search and rare edits. Ordering mutations belong in ``services.py``;
-the Location workspace UI is intentionally deferred.
+Location is the primary editorial surface, including a per-location workspace.
+ServiceAdmin remains available for global search and rare edits. Ordering
+mutations belong in ``services.py``.
 """
 
 from __future__ import annotations
 
 from django.contrib import admin, messages
+from django.core.exceptions import ValidationError
 from django.db.models import Count, Q, QuerySet
-from django.http import HttpRequest
-from django.urls import NoReverseMatch, reverse
+from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
+from django.shortcuts import get_object_or_404, render
+from django.urls import NoReverseMatch, path, reverse
 from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 from django.utils.translation import ngettext
 
-from .forms import ServiceAdminForm
+from .forms import ServiceAdminForm, WorkspaceQuickAddForm
 from .models import Location, Service
-from .services import duplicate_service, quick_add_service, set_services_active
+from .services import (
+    delete_service,
+    duplicate_service,
+    move_service_down,
+    move_service_to_bottom,
+    move_service_to_top,
+    move_service_up,
+    quick_add_service,
+    set_services_active,
+)
 
 
 def _boolean_badge(value: bool, *, yes: str, no: str) -> str:
@@ -37,9 +48,16 @@ def _boolean_badge(value: bool, *, yes: str, no: str) -> str:
     )
 
 
+def _workspace_url(location_id: int) -> str:
+    try:
+        return reverse("admin:ecosystem_location_workspace", args=[location_id])
+    except NoReverseMatch:
+        return f"/admin/ecosystem/location/{location_id}/workspace/"
+
+
 @admin.register(Location)
 class LocationAdmin(admin.ModelAdmin):
-    """Primary admin for placements editors manage day to day."""
+    """Primary admin for placements, including the Location workspace."""
 
     list_display = (
         "name",
@@ -54,7 +72,12 @@ class LocationAdmin(admin.ModelAdmin):
     list_filter = ("active", "updated_at")
     search_fields = ("name", "key", "description")
     ordering = ("position", "name")
-    readonly_fields = ("created_at", "updated_at", "template_tag_snippet")
+    readonly_fields = (
+        "created_at",
+        "updated_at",
+        "template_tag_snippet",
+        "workspace_link",
+    )
     list_per_page = 50
     list_max_show_all = 200
     save_on_top = True
@@ -68,17 +91,18 @@ class LocationAdmin(admin.ModelAdmin):
                 "fields": ("name", "key", "description", "active", "position"),
                 "description": _(
                     "Locations are the placements rendered by the ecosystem "
-                    "template tag. Create a location first, then add services."
+                    "template tag. Create a location first, then manage its "
+                    "services from the workspace."
                 ),
             },
         ),
         (
-            _("Template tag"),
+            _("Workspace"),
             {
-                "fields": ("template_tag_snippet",),
+                "fields": ("workspace_link", "template_tag_snippet"),
                 "description": _(
-                    "Use this key in templates. Prefer not renaming the key "
-                    "after templates already reference it."
+                    "Use the workspace to add, reorder, activate, and "
+                    "duplicate services for this placement."
                 ),
             },
         ),
@@ -90,6 +114,17 @@ class LocationAdmin(admin.ModelAdmin):
             },
         ),
     )
+
+    def get_urls(self):
+        info = self.opts.app_label, self.opts.model_name
+        custom = [
+            path(
+                "<path:object_id>/workspace/",
+                self.admin_site.admin_view(self.workspace_view),
+                name="%s_%s_workspace" % info,
+            ),
+        ]
+        return custom + super().get_urls()
 
     def get_queryset(self, request: HttpRequest) -> QuerySet[Location]:
         return (
@@ -104,6 +139,12 @@ class LocationAdmin(admin.ModelAdmin):
                 ),
             )
         )
+
+    def response_add(self, request, obj, post_url_continue=None):
+        """Send editors into the workspace after creating a location."""
+        if "_addanother" not in request.POST and "_continue" not in request.POST:
+            return HttpResponseRedirect(_workspace_url(obj.pk))
+        return super().response_add(request, obj, post_url_continue)
 
     @admin.display(description=_("Active"), ordering="active")
     def active_badge(self, obj: Location) -> str:
@@ -125,16 +166,20 @@ class LocationAdmin(admin.ModelAdmin):
     def manage_services_link(self, obj: Location) -> str:
         if not obj.pk:
             return "—"
-        opts = Service._meta
-        try:
-            url = reverse(f"admin:{opts.app_label}_{opts.model_name}_changelist")
-        except NoReverseMatch:
-            url = f"/admin/{opts.app_label}/{opts.model_name}/"
         return format_html(
-            '<a class="button" href="{}?location__id__exact={}">{}</a>',
-            url,
-            obj.pk,
-            _("Manage services"),
+            '<a class="button" href="{}">{}</a>',
+            _workspace_url(obj.pk),
+            _("Open workspace"),
+        )
+
+    @admin.display(description=_("Workspace"))
+    def workspace_link(self, obj: Location) -> str:
+        if not obj.pk:
+            return "—"
+        return format_html(
+            '<a class="button" href="{}">{}</a>',
+            _workspace_url(obj.pk),
+            _("Open workspace"),
         )
 
     @admin.display(description=_("Template tag"))
@@ -145,6 +190,132 @@ class LocationAdmin(admin.ModelAdmin):
             "<code>{{% ecosystem \"{}\" %}}</code>",
             obj.key,
         )
+
+    def workspace_view(
+        self,
+        request: HttpRequest,
+        object_id: str,
+    ) -> HttpResponse:
+        """Location workspace: quick add, ordered list, nudge actions."""
+        location = get_object_or_404(self.get_queryset(request), pk=object_id)
+        if not self.has_change_permission(request, location):
+            from django.core.exceptions import PermissionDenied
+
+            raise PermissionDenied
+
+        quick_add_form = WorkspaceQuickAddForm()
+
+        if request.method == "POST":
+            action = request.POST.get("workspace_action", "")
+            redirect = HttpResponseRedirect(_workspace_url(location.pk))
+
+            if action == "quick_add":
+                quick_add_form = WorkspaceQuickAddForm(request.POST)
+                if quick_add_form.is_valid():
+                    quick_add_service(
+                        location,
+                        quick_add_form.cleaned_data["name"],
+                        str(quick_add_form.cleaned_data["url"]),
+                    )
+                    self.message_user(
+                        request,
+                        _("Service “%(name)s” was added.")
+                        % {"name": quick_add_form.cleaned_data["name"]},
+                        messages.SUCCESS,
+                    )
+                    return redirect
+            else:
+                service = self._workspace_service_or_none(
+                    request, location, request.POST.get("service_id")
+                )
+                if service is None:
+                    return redirect
+                try:
+                    self._handle_workspace_service_action(
+                        request, location, service, action
+                    )
+                except ValidationError as exc:
+                    self.message_user(request, str(exc), messages.ERROR)
+                return redirect
+
+        services = list(
+            Service.objects.filter(location=location).order_by("position", "pk")
+        )
+        context = {
+            **self.admin_site.each_context(request),
+            "title": _("Workspace: %(name)s") % {"name": location.name},
+            "opts": self.opts,
+            "location": location,
+            "services": services,
+            "quick_add_form": quick_add_form,
+            "has_view_permission": self.has_view_permission(request, location),
+            "has_change_permission": self.has_change_permission(request, location),
+        }
+        return render(request, "admin/ecosystem/location_workspace.html", context)
+
+    def _workspace_service_or_none(
+        self,
+        request: HttpRequest,
+        location: Location,
+        service_id: str | None,
+    ) -> Service | None:
+        if not service_id:
+            self.message_user(request, _("Missing service."), messages.ERROR)
+            return None
+        try:
+            return Service.objects.get(pk=service_id, location=location)
+        except Service.DoesNotExist:
+            self.message_user(
+                request,
+                _("That service does not belong to this location."),
+                messages.ERROR,
+            )
+            return None
+
+    def _handle_workspace_service_action(
+        self,
+        request: HttpRequest,
+        location: Location,
+        service: Service,
+        action: str,
+    ) -> None:
+        if action == "toggle_active":
+            set_services_active([service], not service.active)
+            self.message_user(
+                request,
+                _("Service “%(name)s” was updated.") % {"name": service.name},
+                messages.SUCCESS,
+            )
+            return
+        if action == "duplicate":
+            copy = duplicate_service(service)
+            self.message_user(
+                request,
+                _("Duplicated “%(name)s”.") % {"name": copy.name},
+                messages.SUCCESS,
+            )
+            return
+        if action == "delete":
+            name = service.name
+            delete_service(service)
+            self.message_user(
+                request,
+                _("Service “%(name)s” was deleted.") % {"name": name},
+                messages.SUCCESS,
+            )
+            return
+        if action == "move_up":
+            move_service_up(service)
+        elif action == "move_down":
+            move_service_down(service)
+        elif action == "move_top":
+            move_service_to_top(service)
+        elif action == "move_bottom":
+            move_service_to_bottom(service)
+        else:
+            self.message_user(request, _("Unknown action."), messages.ERROR)
+            return
+        self.message_user(request, _("Order updated."), messages.SUCCESS)
 
     @admin.action(description=_("Activate selected locations"))
     def activate_locations(
@@ -188,7 +359,7 @@ class ServiceAdmin(admin.ModelAdmin):
     """
     Secondary admin for global search and detailed edits.
 
-    Ordering is owned by the location; ``position`` is read-only here.
+    Ordering is owned by the location workspace; ``position`` is read-only here.
     """
 
     form = ServiceAdminForm
@@ -245,9 +416,8 @@ class ServiceAdmin(admin.ModelAdmin):
             {
                 "fields": ("location", "active", "position"),
                 "description": _(
-                    "Choose a location. Order within a location is managed "
-                    "from that location (workspace coming next); position is "
-                    "shown here as read-only."
+                    "Prefer the location workspace for ordering. Position is "
+                    "read-only on this form."
                 ),
             },
         ),
@@ -319,15 +489,11 @@ class ServiceAdmin(admin.ModelAdmin):
     def location_link(self, obj: Service) -> str:
         if not obj.location_id:
             return "—"
-        opts = Location._meta
-        try:
-            url = reverse(
-                f"admin:{opts.app_label}_{opts.model_name}_change",
-                args=[obj.location_id],
-            )
-        except NoReverseMatch:
-            url = f"/admin/{opts.app_label}/{opts.model_name}/{obj.location_id}/change/"
-        return format_html('<a href="{}">{}</a>', url, obj.location)
+        return format_html(
+            '<a href="{}">{}</a>',
+            _workspace_url(obj.location_id),
+            obj.location,
+        )
 
     @admin.display(description=_("URL"), ordering="url")
     def url_link(self, obj: Service) -> str:

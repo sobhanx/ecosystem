@@ -1,4 +1,4 @@
-"""Admin forms for ecosystem services."""
+"""Admin forms for ecosystem services and the Location workspace."""
 
 from __future__ import annotations
 
@@ -9,6 +9,27 @@ from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 
 from .models import Service
+
+
+class WorkspaceQuickAddForm(forms.Form):
+    """Minimal create form used on the Location workspace."""
+
+    name = forms.CharField(
+        label=_("Name"),
+        max_length=150,
+        widget=forms.TextInput(
+            attrs={"class": "vTextField", "placeholder": _("Academy")}
+        ),
+    )
+    url = forms.URLField(
+        label=_("URL"),
+        widget=forms.URLInput(
+            attrs={
+                "class": "vTextField",
+                "placeholder": "https://academy.example.com",
+            }
+        ),
+    )
 
 
 class ServiceAdminForm(forms.ModelForm):
@@ -25,7 +46,7 @@ class ServiceAdminForm(forms.ModelForm):
         location.label = _("Placement")
         location.help_text = _(
             "Choose the placement this service belongs to. Prefer managing "
-            "services from Ecosystem → Locations. The location key must match "
+            "services from the location workspace. The location key must match "
             'the template tag argument (example key: "footer").'
         )
 

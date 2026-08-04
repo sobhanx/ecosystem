@@ -24,6 +24,7 @@ __all__ = [
     "move_services",
     "duplicate_service",
     "set_services_active",
+    "delete_service",
     "move_service_up",
     "move_service_down",
     "move_service_to_top",
@@ -223,6 +224,14 @@ def set_services_active(
     if not ids:
         return 0
     return Service.objects.filter(pk__in=ids).update(active=active)
+
+
+@transaction.atomic
+def delete_service(service: Service) -> None:
+    """Delete ``service`` and renumber remaining siblings densely."""
+    location = service.location
+    service.delete()
+    _renumber_location(location)
 
 
 def _ordered_siblings(service: Service) -> list[Service]:

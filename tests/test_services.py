@@ -8,6 +8,7 @@ from django.test import TestCase
 
 from ecosystem.models import Location, Service
 from ecosystem.services import (
+    delete_service,
     duplicate_service,
     move_service_down,
     move_service_to_bottom,
@@ -221,6 +222,12 @@ class SetServicesActiveTests(TestCase):
         self.shop.refresh_from_db()
         self.assertTrue(self.academy.active)
         self.assertFalse(self.shop.active)
+
+    def test_delete_service_renumbers(self) -> None:
+        delete_service(self.academy)
+        self.shop.refresh_from_db()
+        self.assertEqual(self.shop.position, 0)
+        self.assertEqual(Service.objects.filter(location=self.footer).count(), 1)
 
 
 class NudgeServiceTests(TestCase):
