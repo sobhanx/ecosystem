@@ -1,5 +1,5 @@
 /**
- * Copy-to-clipboard for ecosystem admin snippets (template tags, URLs).
+ * Ecosystem admin helpers: clipboard copy and confirm-before-submit.
  */
 (function () {
   "use strict";
@@ -32,16 +32,32 @@
   }
 
   document.addEventListener("click", function (event) {
+    var confirmControl = event.target.closest("[data-confirm]");
+    if (confirmControl) {
+      var message = confirmControl.getAttribute("data-confirm") || "";
+      if (message && !window.confirm(message)) {
+        event.preventDefault();
+        return;
+      }
+    }
+
     var button = event.target.closest("[data-copy], [data-copy-from]");
     if (!button) return;
     event.preventDefault();
     var text = resolveText(button);
     if (!text) return;
-    copyText(text).then(function () {
-      flashLabel(
-        button,
-        button.getAttribute("data-copied-label") || "Copied"
-      );
-    });
+    copyText(text)
+      .then(function () {
+        flashLabel(
+          button,
+          button.getAttribute("data-copied-label") || "Copied"
+        );
+      })
+      .catch(function () {
+        flashLabel(
+          button,
+          button.getAttribute("data-copy-failed-label") || "Copy failed"
+        );
+      });
   });
 })();

@@ -91,6 +91,8 @@ MEDIA_ROOT = BASE_DIR / "media"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Suggested placement keys for the ecosystem admin location picker.
+# Optional: used only by historical migration 0004 for labels when upgrading
+# from 1.x string locations. Not consumed by Admin or template tags at runtime.
 ECOSYSTEM_LOCATIONS = [
     ("header", "Site header"),
     ("main", "Main content"),

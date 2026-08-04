@@ -25,7 +25,7 @@ def get_location_by_key(key: str) -> Location | None:
 
 def get_active_services(location: str) -> QuerySet[Service]:
     """
-    Return active services for the location ``key``, ordered by position then name.
+    Return active services for the location ``key``, ordered by position then pk.
 
     Matching is against ``Location.key`` after stripping surrounding whitespace.
     Missing keys and inactive locations yield an empty queryset.
@@ -44,5 +44,5 @@ def get_active_services(location: str) -> QuerySet[Service]:
             active=True,
             location__key=normalized,
             location__active=True,
-        ).order_by("position", "name")
+        ).order_by("position", "pk")
     )

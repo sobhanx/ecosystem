@@ -311,7 +311,7 @@
       <form method="post" id="eco-bulk-form">
         {% csrf_token %}
         <div class="eco-bulk">
-          <label for="eco-bulk-action">{% translate 'With selected' %}:</label>
+          <label>{% translate 'With selected' %}:</label>
           <button type="submit" class="button" name="workspace_action" value="bulk_activate">{% translate 'Activate' %}</button>
           <button type="submit" class="button" name="workspace_action" value="bulk_deactivate">{% translate 'Deactivate' %}</button>
           <button type="submit" class="button" name="workspace_action" value="bulk_duplicate">{% translate 'Duplicate' %}</button>
@@ -410,7 +410,14 @@
                     <button type="submit" class="button" form="eco-row-{{ service.pk }}-bottom" name="workspace_action" value="move_bottom" title="{% translate 'Move to bottom' %}" aria-label="{% translate 'Move to bottom' %}">⇊</button>
                   </span>
                   <span class="eco-action-group">
-                    <button type="submit" class="button deletelink" form="eco-row-{{ service.pk }}-delete" name="workspace_action" value="delete" onclick="return confirm('{% translate 'Delete this service?' %}');">{% translate 'Delete' %}</button>
+                    <button
+                      type="submit"
+                      class="button deletelink"
+                      form="eco-row-{{ service.pk }}-delete"
+                      name="workspace_action"
+                      value="delete"
+                      data-confirm="{% translate 'Delete this service?' %}"
+                    >{% translate 'Delete' %}</button>
                   </span>
                 </td>
               </tr>

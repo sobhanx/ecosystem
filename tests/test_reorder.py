@@ -159,6 +159,7 @@ class LocationReorderEndpointTests(TestCase):
         self.assertContains(response, 'value="move_down"')
         self.assertContains(response, 'value="move_top"')
         self.assertContains(response, 'value="move_bottom"')
+        self.assertContains(response, "data-confirm")
 
     def test_staff_with_change_permission_can_reorder(self) -> None:
         User = get_user_model()

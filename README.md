@@ -19,10 +19,12 @@ Django settings (`INSTALLED_APPS`, media, and migrations).
 
 ## Installation
 
+Prefer an exact version pin from a freshly built wheel or your internal index:
+
 ```bash
-pip install -e /path/to/ecosystem
-# or
-pip install django-ecosystem
+pip install ecosystem==2.1.0
+# or from a path / wheel file
+pip install /path/to/ecosystem-2.1.0-py3-none-any.whl
 ```
 
 ```python
@@ -31,6 +33,16 @@ INSTALLED_APPS = [
     "ecosystem",
 ]
 ```
+
+Then:
+
+```bash
+python manage.py migrate ecosystem
+python manage.py collectstatic  # when you collect app static files in production
+```
+
+See [UPGRADING.md](UPGRADING.md) for 1.x → 2.x notes and the release process.
+See [CHANGELOG.md](CHANGELOG.md) for version history.
 
 ## Location-first workflow
 
@@ -42,11 +54,12 @@ INSTALLED_APPS = [
 5. Leave detailed edits (logo, description, slug) to the service change form when needed.
 
 `ServiceAdmin` remains available for global search and rare edits. Prefer the
-workspace for day-to-day ordering and activation.
+workspace for day-to-day ordering and activation. Changing a service’s location
+in ServiceAdmin uses the same `move_services` write path (dense order preserved).
 
 ## Template tag (unchanged API)
 
-Location keys are free-form strings that must match `Location.key`:
+Location keys are free-form strings that must match `Location.key` (case-sensitive):
 
 ```django
 {% load ecosystem %}
@@ -56,7 +69,7 @@ Location keys are free-form strings that must match `Location.key`:
 ```
 
 Only **active** services on an **active** location are returned, ordered by
-`position`, then `name`.
+`position`, then `pk`.
 
 Legacy alias (still supported):
 
@@ -71,16 +84,7 @@ Legacy alias (still supported):
 | `INSTALLED_APPS` | Register the app |
 | `MEDIA_URL` / `MEDIA_ROOT` | Serve uploaded logos |
 | Database | Store `Location` and `Service` rows |
-| `ECOSYSTEM_LOCATIONS` (optional) | Suggested labels for known keys (does not auto-create locations) |
-
-## Migrations
-
-```bash
-python manage.py migrate ecosystem
-```
-
-See [UPGRADING.md](UPGRADING.md) when moving from 1.x (string locations) to 2.x
-(`Location` model + workspace).
+| `ECOSYSTEM_LOCATIONS` (optional) | **Migration-time labels only** for keys already present on 1.x services during `0004`. Does not create locations or drive Admin UI at runtime. |
 
 ## Media configuration
 
@@ -110,7 +114,7 @@ Admin labels use `gettext_lazy`. Persian translations ship in `locale/fa/`.
 ecosystem/                  # repository root (importable Django app)
   models.py                 # Location + Service
   services.py               # Write API (ordering, activate, duplicate, …)
-  selectors.py              # Read helpers for template rendering
+  lookups.py                # Read helpers for template rendering
   admin.py                  # Location-first Admin + workspace
   templates/admin/ecosystem/
     location_workspace.html

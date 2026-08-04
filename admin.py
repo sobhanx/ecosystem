@@ -10,7 +10,7 @@ from __future__ import annotations
 import json
 
 from django.contrib import admin, messages
-from django.core.exceptions import ValidationError
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.db.models import Count, Q, QuerySet
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, render
@@ -224,8 +224,6 @@ class LocationAdmin(admin.ModelAdmin):
         """Location workspace: quick add, ordered list, nudge actions."""
         location = get_object_or_404(self.get_queryset(request), pk=object_id)
         if not self.has_change_permission(request, location):
-            from django.core.exceptions import PermissionDenied
-
             raise PermissionDenied
 
         quick_add_form = WorkspaceQuickAddForm()
@@ -286,7 +284,9 @@ class LocationAdmin(admin.ModelAdmin):
             Service.objects.filter(location=location).order_by("position", "pk")
         )
         other_locations = list(
-            Location.objects.exclude(pk=location.pk).order_by("position", "name")
+            self.get_queryset(request)
+            .exclude(pk=location.pk)
+            .order_by("position", "name")
         )
         active_count = sum(1 for service in services if service.active)
         context = {
@@ -317,7 +317,7 @@ class LocationAdmin(admin.ModelAdmin):
                 status=405,
             )
 
-        location = get_object_or_404(Location, pk=object_id)
+        location = get_object_or_404(self.get_queryset(request), pk=object_id)
         if not self.has_change_permission(request, location):
             return JsonResponse(
                 {"ok": False, "error": gettext("Permission denied.")},
@@ -454,11 +454,22 @@ class LocationAdmin(admin.ModelAdmin):
                 )
                 return
             try:
-                target = Location.objects.exclude(pk=location.pk).get(pk=target_id)
+                target = (
+                    self.get_queryset(request)
+                    .exclude(pk=location.pk)
+                    .get(pk=target_id)
+                )
             except (Location.DoesNotExist, ValueError, TypeError):
                 self.message_user(
                     request,
                     _("Choose a valid destination location."),
+                    messages.ERROR,
+                )
+                return
+            if not self.has_change_permission(request, target):
+                self.message_user(
+                    request,
+                    _("You do not have permission to move services to that location."),
                     messages.ERROR,
                 )
                 return
@@ -607,7 +618,7 @@ class ServiceAdmin(admin.ModelAdmin):
         "location__name",
         "description",
     )
-    ordering = ("location__position", "position", "name")
+    ordering = ("location__position", "position", "pk")
     autocomplete_fields = ("location",)
     prepopulated_fields = {"slug": ("name",)}
     readonly_fields = (
@@ -625,6 +636,9 @@ class ServiceAdmin(admin.ModelAdmin):
         "deactivate_services",
         "duplicate_services",
     )
+
+    def get_queryset(self, request: HttpRequest) -> QuerySet[Service]:
+        return super().get_queryset(request).select_related("location")
 
     fieldsets = (
         (
@@ -688,27 +702,41 @@ class ServiceAdmin(admin.ModelAdmin):
         form: ServiceAdminForm,
         change: bool,
     ) -> None:
-        """Append new services; never let the change form rewrite position."""
-        if change:
-            obj.position = (
-                Service.objects.only("position").get(pk=obj.pk).position
+        """
+        Append new services via the service layer.
+
+        Location changes go through ``move_services`` so dense ordering is kept
+        on both the source and destination placements.
+        """
+        if not change:
+            created = quick_add_service(
+                obj.location,
+                obj.name,
+                obj.url,
+                active=obj.active,
+                open_in_new_tab=obj.open_in_new_tab,
+                description=obj.description or "",
+                slug=obj.slug or "",
+                logo=obj.logo if getattr(obj, "logo", None) else "",
             )
-            super().save_model(request, obj, form, change)
+            obj.pk = created.pk
+            obj.position = created.position
+            form.instance = created
             return
 
-        created = quick_add_service(
-            obj.location,
-            obj.name,
-            obj.url,
-            active=obj.active,
-            open_in_new_tab=obj.open_in_new_tab,
-            description=obj.description or "",
-            slug=obj.slug or "",
-            logo=obj.logo if getattr(obj, "logo", None) else "",
-        )
-        obj.pk = created.pk
-        obj.position = created.position
-        form.instance = created
+        previous = Service.objects.get(pk=obj.pk)
+        new_location = obj.location
+        location_changed = previous.location_id != new_location.pk
+
+        # Persist non-ordering fields while keeping the previous placement.
+        obj.location_id = previous.location_id
+        obj.position = previous.position
+        super().save_model(request, obj, form, change)
+
+        if location_changed:
+            move_services([obj], new_location)
+            obj.refresh_from_db()
+            form.instance = obj
 
     @admin.display(description=_("Location"), ordering="location__name")
     def location_link(self, obj: Service) -> str:

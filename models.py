@@ -164,7 +164,7 @@ class Service(models.Model):
     class Meta:
         verbose_name = _("service")
         verbose_name_plural = _("services")
-        ordering = ("position", "name")
+        ordering = ("position", "pk")
         indexes = [
             models.Index(
                 fields=["location", "position"],

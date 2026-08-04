@@ -293,6 +293,9 @@ msgstr "یک محل نمایش مقصد انتخاب کنید."
 msgid "Choose a valid destination location."
 msgstr "یک محل نمایش مقصد معتبر انتخاب کنید."
 
+msgid "You do not have permission to move services to that location."
+msgstr "شما اجازه انتقال سرویس‌ها به آن محل نمایش را ندارید."
+
 msgid "Copied"
 msgstr "کپی شد"
 

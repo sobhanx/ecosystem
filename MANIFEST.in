@@ -1,11 +1,17 @@
 include LICENSE
 include README.md
 include UPGRADING.md
+include CHANGELOG.md
 include scripts/runtests.py
 recursive-include tests *.py
 recursive-include static *
 recursive-include templates *
 recursive-include locale *
+recursive-include migrations *.py
+prune demo
+prune dist
+prune build
 global-exclude __pycache__
 global-exclude *.py[cod]
 global-exclude .DS_Store
+global-exclude *.egg-info

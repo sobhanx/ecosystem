@@ -7,7 +7,7 @@ from django.template import Context, Template
 from django.test import SimpleTestCase, TestCase, override_settings
 
 from ecosystem.models import Location, Service
-from ecosystem.selectors import get_active_services
+from ecosystem.lookups import get_active_services
 from ecosystem.services import get_active_services as get_active_services_compat
 
 
@@ -147,32 +147,31 @@ class ServiceModelTests(TestCase):
             "Sibling blog for long-form content.",
         )
 
-    def test_meta_ordering_by_position_then_name(self) -> None:
+    def test_meta_ordering_by_position_then_pk(self) -> None:
         Service.objects.create(
             name="Zebra",
             url="https://zebra.example.com",
             location=self.header,
             position=2,
         )
-        Service.objects.create(
+        alpha = Service.objects.create(
             name="Alpha",
             url="https://alpha.example.com",
             location=self.header,
             position=1,
         )
-        Service.objects.create(
+        beta = Service.objects.create(
             name="Beta",
             url="https://beta.example.com",
             location=self.header,
             position=1,
         )
 
-        names = list(
-            Service.objects.filter(location=self.header).values_list(
-                "name", flat=True
-            )
+        ordered = list(
+            Service.objects.filter(location=self.header).values_list("pk", flat=True)
         )
-        self.assertEqual(names, ["Alpha", "Beta", "Zebra"])
+        self.assertEqual(ordered, [alpha.pk, beta.pk, Service.objects.get(name="Zebra").pk])
+        self.assertEqual(Service._meta.ordering, ("position", "pk"))
 
 
 class ActiveServicesQueryTests(TestCase):
@@ -244,7 +243,7 @@ class ActiveServicesQueryTests(TestCase):
         )
         self.assertEqual(list(get_active_services("  docs_nav  ")), [service])
 
-    def test_ordering_by_position_then_name(self) -> None:
+    def test_ordering_by_position_then_pk(self) -> None:
         Service.objects.create(
             name="Docs",
             url="https://docs.example.com",
@@ -255,6 +254,7 @@ class ActiveServicesQueryTests(TestCase):
         names = list(
             get_active_services("footer").values_list("name", flat=True)
         )
+        # Blog (pos 1, lower pk) before Docs (pos 1, higher pk), then Shop (pos 2).
         self.assertEqual(names, ["Blog", "Docs", "Shop"])
 
     def test_inactive_location_returns_empty(self) -> None:
