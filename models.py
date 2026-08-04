@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
 from django.utils.text import slugify
@@ -14,7 +15,10 @@ class Location(models.Model):
     """
     Named placement for ecosystem services (for example Footer or Header).
 
-    ``key`` is the stable identifier used by ``{% ecosystem "key" %}``.
+    ``key`` is the stable template-tag identifier used by
+    ``{% ecosystem "key" %}``. Surrounding whitespace is stripped on
+    validation and save. Changing an existing key is a breaking change for
+    every template that still references the old value.
     """
 
     key = models.CharField(
@@ -23,7 +27,10 @@ class Location(models.Model):
         unique=True,
         help_text=_(
             'Stable template-tag identifier (for example "footer" or '
-            '"pricing_page"). Prefer leaving this unchanged after creation.'
+            '"pricing_page"). Must match the ecosystem template tag '
+            "argument exactly. Changing an existing key breaks those "
+            "template usages. Surrounding whitespace is trimmed "
+            "automatically."
         ),
     )
     name = models.CharField(
@@ -68,13 +75,35 @@ class Location(models.Model):
     def __str__(self) -> str:
         return self.name
 
+    def clean(self) -> None:
+        """Validate and normalize key/name before form or Admin saves."""
+        super().clean()
+        key = (self.key or "").strip()
+        if not key:
+            raise ValidationError(
+                {
+                    "key": _(
+                        'Enter a location key (for example "footer"). '
+                        "Blank or whitespace-only keys are not allowed."
+                    )
+                }
+            )
+        self.key = key
+
+        name = (self.name or "").strip()
+        self.name = name or key
+
     def save(self, *args: Any, **kwargs: Any) -> None:
-        """Normalize the location key before saving."""
-        self.key = self.key.strip()
-        if not self.name.strip():
-            self.name = self.key
-        else:
-            self.name = self.name.strip()
+        """
+        Normalize key and name before persisting.
+
+        Stripping is intentional normalization of surrounding whitespace, not a
+        rewrite of the key identity. Prefer ``full_clean()`` (Admin/forms) so
+        blank keys raise a validation error instead of hitting the DB check.
+        """
+        self.key = (self.key or "").strip()
+        name = (self.name or "").strip()
+        self.name = name or self.key
         super().save(*args, **kwargs)
 
 
@@ -85,6 +114,13 @@ class Service(models.Model):
     Administrators register sibling sites (academy, shop, blog, dashboard,
     and so on). Templates render them by location ``key`` via the
     ``{% ecosystem %}`` inclusion tag.
+
+    ``position`` is system-managed dense order within a location
+    (``0..n-1``). Write helpers own create/move/reorder/delete so Admin and
+    forms must not treat position as an editable field. Uniqueness of
+    ``(location, position)`` is an application invariant rather than a DB
+    constraint, so reorder/swap updates can complete without transient
+    collisions.
     """
 
     location = models.ForeignKey(
@@ -93,8 +129,8 @@ class Service(models.Model):
         related_name="services",
         on_delete=models.PROTECT,
         help_text=_(
-            "Placement this service belongs to. Must match a location key "
-            "used in the ecosystem template tag."
+            "Placement this service belongs to. The placement key must match "
+            "the argument used in the ecosystem template tag."
         ),
     )
     name = models.CharField(
@@ -142,10 +178,8 @@ class Service(models.Model):
         _("position"),
         default=0,
         help_text=_(
-            "Order within the location. Maintained by the application; "
-            "lower values appear first. Dense ``0..n-1`` per location is an "
-            "application invariant (not a DB unique constraint) so swap and "
-            "reorder can update rows without transient collisions."
+            "Order within the location. Managed automatically — use the "
+            "location workspace to reorder. Lower values appear first."
         ),
     )
     active = models.BooleanField(
@@ -187,8 +221,16 @@ class Service(models.Model):
     def __str__(self) -> str:
         return self.name
 
+    def clean(self) -> None:
+        """Normalize slug whitespace; empty slug is filled in ``save()``."""
+        super().clean()
+        if self.slug is not None:
+            self.slug = str(self.slug).strip()
+
     def save(self, *args: Any, **kwargs: Any) -> None:
-        """Generate a slug when the field is empty."""
+        """Generate a slug when the field is empty (no ordering side effects)."""
+        if self.slug is not None:
+            self.slug = str(self.slug).strip()
         if not self.slug:
             self.slug = type(self).build_unique_slug(
                 self.name,
@@ -203,7 +245,7 @@ class Service(models.Model):
         *,
         exclude_pk: int | None = None,
     ) -> str:
-        """Build a unique slug from ``name`` using Django's ``slugify``."""
+        """Canonical unique slug builder used by model save and Admin forms."""
         base_slug = slugify(name) or "service"
         candidate = base_slug
         suffix = 2

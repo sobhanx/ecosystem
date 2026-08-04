@@ -55,11 +55,19 @@ See [CHANGELOG.md](CHANGELOG.md) for version history.
 
 `ServiceAdmin` remains available for global search and rare edits. Prefer the
 workspace for day-to-day ordering and activation. Changing a service’s location
-in ServiceAdmin uses the same `move_services` write path (dense order preserved).
+in ServiceAdmin keeps dense order on both placements.
+
+**Key contract:** `Location.key` is the public template identifier. Surrounding
+whitespace is trimmed on save. Changing an existing key is a breaking change for
+every `{% ecosystem "key" %}` call that still uses the old value.
+
+**Ordering:** Service order within a location is system-managed. Editors reorder
+from the location workspace; Admin forms do not expose editable positions.
 
 ## Template tag (unchanged API)
 
-Location keys are free-form strings that must match `Location.key` (case-sensitive):
+Location keys are free-form strings that must match `Location.key`
+(case-sensitive, after trimming surrounding whitespace):
 
 ```django
 {% load ecosystem %}
@@ -69,7 +77,7 @@ Location keys are free-form strings that must match `Location.key` (case-sensiti
 ```
 
 Only **active** services on an **active** location are returned, ordered by
-`position`, then `pk`.
+position, then primary key. Missing or inactive locations render an empty list.
 
 Legacy alias (still supported):
 

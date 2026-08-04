@@ -54,8 +54,10 @@ class LocationAdmin(LocationWorkspaceMixin, admin.ModelAdmin):
                 "fields": ("name", "key", "description", "active", "position"),
                 "description": _(
                     "Locations are the placements rendered by the ecosystem "
-                    "template tag. Create a location first, then manage its "
-                    "services from the workspace."
+                    "template tag. The key must match the template tag "
+                    "argument and should not change after creation. Create a "
+                    "location first, then manage its services from the "
+                    "workspace."
                 ),
             },
         ),

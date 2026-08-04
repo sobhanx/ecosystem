@@ -32,7 +32,13 @@ class WorkspaceQuickAddForm(forms.Form):
 
 
 class ServiceAdminForm(forms.ModelForm):
-    """Model form tuned for non-technical editors in Django Admin."""
+    """
+    Model form tuned for non-technical editors in Django Admin.
+
+    Position is system-managed (excluded here; read-only on ModelAdmin).
+    Slug generation uses ``Service.build_unique_slug``. URL uses Django's
+    standard ``URLField`` rules, matching the workspace quick-add form.
+    """
 
     class Meta:
         model = Service
