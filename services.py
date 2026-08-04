@@ -212,6 +212,13 @@ def duplicate_service(service: Service) -> Service:
     )
 
 
+def duplicate_services(
+    services: Iterable[Service] | QuerySet[Service],
+) -> list[Service]:
+    """Duplicate each service at the end of its current location."""
+    return [duplicate_service(service) for service in _resolve_services(services)]
+
+
 def set_services_active(
     services: Iterable[Service] | QuerySet[Service],
     active: bool,

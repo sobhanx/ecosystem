@@ -4,7 +4,7 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: django-ecosystem 1.1.1\n"
+"Project-Id-Version: django-ecosystem 2.0.0\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-07-25 15:04+0330\n"
 "PO-Revision-Date: 2026-07-25 15:10+0330\n"
@@ -236,3 +236,112 @@ msgstr "سرویس"
 #: models.py:100
 msgid "services"
 msgstr "سرویس‌ها"
+
+# --- 2.0 Location workspace / Admin polish ---
+
+msgid "Location workspace"
+msgstr "فضای کاری محل نمایش"
+
+msgid "Copy tag"
+msgstr "کپی تگ"
+
+msgid "Location active"
+msgstr "محل نمایش فعال"
+
+msgid "Location hidden"
+msgstr "محل نمایش پنهان"
+
+msgid "Add service"
+msgstr "افزودن سرویس"
+
+msgid "With selected"
+msgstr "با موارد انتخاب‌شده"
+
+msgid "Move to…"
+msgstr "انتقال به…"
+
+msgid "Move to location"
+msgstr "انتقال به محل نمایش"
+
+msgid "Move"
+msgstr "انتقال"
+
+msgid "Select all"
+msgstr "انتخاب همه"
+
+msgid "Copy URL"
+msgstr "کپی نشانی"
+
+msgid "Hide"
+msgstr "پنهان"
+
+msgid "Show"
+msgstr "نمایش"
+
+msgid "Select at least one service."
+msgstr "حداقل یک سرویس را انتخاب کنید."
+
+msgid "Invalid service selection."
+msgstr "انتخاب سرویس نامعتبر است."
+
+msgid "One or more selected services do not belong to this location."
+msgstr "یک یا چند سرویس انتخاب‌شده به این محل نمایش تعلق ندارند."
+
+msgid "Choose a destination location."
+msgstr "یک محل نمایش مقصد انتخاب کنید."
+
+msgid "Choose a valid destination location."
+msgstr "یک محل نمایش مقصد معتبر انتخاب کنید."
+
+msgid "Copied"
+msgstr "کپی شد"
+
+msgid "Open workspace"
+msgstr "باز کردن فضای کاری"
+
+msgid "Workspace"
+msgstr "فضای کاری"
+
+msgid "Quick add"
+msgstr "افزودن سریع"
+
+msgid "Copy"
+msgstr "کپی"
+
+msgid "Active services"
+msgstr "سرویس‌های فعال"
+
+msgid "Manage"
+msgstr "مدیریت"
+
+msgid "Drag rows to reorder, or use the move buttons. Move buttons work without JavaScript."
+msgstr "برای تغییر ترتیب ردیف‌ها را بکشید یا از دکمه‌های جابه‌جایی استفاده کنید. دکمه‌های جابه‌جایی بدون جاوااسکریپت کار می‌کنند."
+
+msgid "Saving order…"
+msgstr "در حال ذخیره ترتیب…"
+
+msgid "Order saved."
+msgstr "ترتیب ذخیره شد."
+
+msgid "Could not save order."
+msgstr "ذخیره ترتیب ممکن نشد."
+
+msgid "Drag to reorder"
+msgstr "کشیدن برای تغییر ترتیب"
+
+msgid "Edit location"
+msgstr "ویرایش محل نمایش"
+
+msgid "All locations"
+msgstr "همه محل‌های نمایش"
+
+msgid "%d service was duplicated."
+msgid_plural "%d services were duplicated."
+msgstr[0] "%d سرویس تکثیر شد."
+msgstr[1] "%d سرویس تکثیر شدند."
+
+msgid "%(count)d service was moved to “%(name)s”."
+msgid_plural "%(count)d services were moved to “%(name)s”."
+msgstr[0] "%(count)d سرویس به «%(name)s» منتقل شد."
+msgstr[1] "%(count)d سرویس به «%(name)s» منتقل شدند."
+

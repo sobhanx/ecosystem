@@ -29,6 +29,7 @@ from .services import (
     move_service_to_bottom,
     move_service_to_top,
     move_service_up,
+    move_services,
     quick_add_service,
     reorder_services,
     set_services_active,
@@ -95,6 +96,8 @@ class LocationAdmin(admin.ModelAdmin):
     empty_value_display = "—"
     actions = ("activate_locations", "deactivate_locations")
 
+    class Media:
+        js = ("ecosystem/admin_copy.js",)
     fieldsets = (
         (
             _("Placement"),
@@ -202,9 +205,15 @@ class LocationAdmin(admin.ModelAdmin):
     def template_tag_snippet(self, obj: Location) -> str:
         if not obj.key:
             return "—"
+        tag = '{% ecosystem "' + obj.key + '" %}'
         return format_html(
-            "<code>{{% ecosystem \"{}\" %}}</code>",
-            obj.key,
+            '<code class="eco-admin-tag">{}</code> '
+            '<button type="button" class="button eco-copy-snippet" '
+            'data-copy="{}" data-copied-label="{}">{}</button>',
+            tag,
+            tag,
+            _("Copied"),
+            _("Copy"),
         )
 
     def workspace_view(
@@ -240,30 +249,56 @@ class LocationAdmin(admin.ModelAdmin):
                         messages.SUCCESS,
                     )
                     return redirect
-            else:
-                service = self._workspace_service_or_none(
-                    request, location, request.POST.get("service_id")
+                return self._render_workspace(
+                    request, location, quick_add_form=quick_add_form
                 )
-                if service is None:
-                    return redirect
+
+            if action.startswith("bulk_"):
                 try:
-                    self._handle_workspace_service_action(
-                        request, location, service, action
-                    )
+                    self._handle_workspace_bulk_action(request, location, action)
                 except ValidationError as exc:
                     self.message_user(request, str(exc), messages.ERROR)
                 return redirect
 
+            service = self._workspace_service_or_none(
+                request, location, request.POST.get("service_id")
+            )
+            if service is None:
+                return redirect
+            try:
+                self._handle_workspace_service_action(
+                    request, location, service, action
+                )
+            except ValidationError as exc:
+                self.message_user(request, str(exc), messages.ERROR)
+            return redirect
+
+        return self._render_workspace(request, location, quick_add_form=quick_add_form)
+
+    def _render_workspace(
+        self,
+        request: HttpRequest,
+        location: Location,
+        *,
+        quick_add_form: WorkspaceQuickAddForm | None = None,
+    ) -> HttpResponse:
         services = list(
             Service.objects.filter(location=location).order_by("position", "pk")
         )
+        other_locations = list(
+            Location.objects.exclude(pk=location.pk).order_by("position", "name")
+        )
+        active_count = sum(1 for service in services if service.active)
         context = {
             **self.admin_site.each_context(request),
             "title": _("Workspace: %(name)s") % {"name": location.name},
             "opts": self.opts,
             "location": location,
             "services": services,
-            "quick_add_form": quick_add_form,
+            "service_total": len(services),
+            "service_active_count": active_count,
+            "other_locations": other_locations,
+            "quick_add_form": quick_add_form or WorkspaceQuickAddForm(),
             "reorder_url": _reorder_url(location.pk),
             "has_view_permission": self.has_view_permission(request, location),
             "has_change_permission": self.has_change_permission(request, location),
@@ -325,6 +360,123 @@ class LocationAdmin(admin.ModelAdmin):
             return JsonResponse({"ok": False, "error": message}, status=400)
 
         return JsonResponse({"ok": True})
+
+    def _workspace_selected_services(
+        self,
+        request: HttpRequest,
+        location: Location,
+    ) -> list[Service] | None:
+        raw_ids = request.POST.getlist("service_ids")
+        if not raw_ids:
+            self.message_user(
+                request,
+                _("Select at least one service."),
+                messages.ERROR,
+            )
+            return None
+        try:
+            ids = [int(pk) for pk in raw_ids]
+        except (TypeError, ValueError):
+            self.message_user(request, _("Invalid service selection."), messages.ERROR)
+            return None
+        services = list(
+            Service.objects.filter(location=location, pk__in=ids).order_by(
+                "position", "pk"
+            )
+        )
+        if len(services) != len(set(ids)):
+            self.message_user(
+                request,
+                _("One or more selected services do not belong to this location."),
+                messages.ERROR,
+            )
+            return None
+        return services
+
+    def _handle_workspace_bulk_action(
+        self,
+        request: HttpRequest,
+        location: Location,
+        action: str,
+    ) -> None:
+        services = self._workspace_selected_services(request, location)
+        if services is None:
+            return
+
+        count = len(services)
+        if action == "bulk_activate":
+            set_services_active(services, True)
+            self.message_user(
+                request,
+                ngettext(
+                    "%d service was activated.",
+                    "%d services were activated.",
+                    count,
+                )
+                % count,
+                messages.SUCCESS,
+            )
+            return
+        if action == "bulk_deactivate":
+            set_services_active(services, False)
+            self.message_user(
+                request,
+                ngettext(
+                    "%d service was deactivated.",
+                    "%d services were deactivated.",
+                    count,
+                )
+                % count,
+                messages.SUCCESS,
+            )
+            return
+        if action == "bulk_duplicate":
+            for service in services:
+                duplicate_service(service)
+            self.message_user(
+                request,
+                ngettext(
+                    "%d service was duplicated.",
+                    "%d services were duplicated.",
+                    count,
+                )
+                % count,
+                messages.SUCCESS,
+            )
+            return
+        if action == "bulk_move":
+            target_id = request.POST.get("target_location")
+            if not target_id:
+                self.message_user(
+                    request,
+                    _("Choose a destination location."),
+                    messages.ERROR,
+                )
+                return
+            try:
+                target = Location.objects.exclude(pk=location.pk).get(pk=target_id)
+            except (Location.DoesNotExist, ValueError, TypeError):
+                self.message_user(
+                    request,
+                    _("Choose a valid destination location."),
+                    messages.ERROR,
+                )
+                return
+            moved = move_services(services, target)
+            moved_count = len(moved)
+            self.message_user(
+                request,
+                ngettext(
+                    "%(count)d service was moved to “%(name)s”.",
+                    "%(count)d services were moved to “%(name)s”.",
+                    moved_count,
+                )
+                % {"count": moved_count, "name": target.name},
+                messages.SUCCESS,
+            )
+            return
+
+        self.message_user(request, _("Unknown action."), messages.ERROR)
 
     def _workspace_service_or_none(
         self,
@@ -668,10 +820,9 @@ class ServiceAdmin(admin.ModelAdmin):
         request: HttpRequest,
         queryset: QuerySet[Service],
     ) -> None:
-        created = 0
-        for service in queryset.order_by("pk"):
-            duplicate_service(service)
-            created += 1
+        from .services import duplicate_services as bulk_duplicate
+
+        created = len(bulk_duplicate(list(queryset.order_by("pk"))))
         self.message_user(
             request,
             ngettext(

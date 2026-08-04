@@ -435,6 +435,8 @@ class LocationAdminTests(TestCase):
         html = self.admin.template_tag_snippet(self.footer)
         self.assertIn("ecosystem", html)
         self.assertIn("footer", html)
+        self.assertIn("eco-copy-snippet", html)
+        self.assertIn("Copy", html)
 
 
 class ServiceAdminTests(TestCase):

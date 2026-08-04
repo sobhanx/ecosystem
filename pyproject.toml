@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ecosystem"
-version = "1.1.1"
+version = "2.0.0"
 description = "Reusable Django app for managing and rendering ecosystem services."
 readme = "README.md"
 requires-python = ">=3.10"

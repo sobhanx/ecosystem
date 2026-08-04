@@ -40,8 +40,11 @@ class LocationWorkspaceTests(TestCase):
         self.assertContains(response, "Footer")
         self.assertContains(response, "footer")
         self.assertContains(response, '{% ecosystem "footer" %}')
+        self.assertContains(response, "Location workspace")
         self.assertContains(response, "Quick add")
-        self.assertContains(response, "No services in this location yet")
+        self.assertContains(response, "Copy tag")
+        self.assertContains(response, "has no services yet")
+        self.assertContains(response, "ecosystem/admin_copy.js")
 
     def test_quick_add_creates_service(self) -> None:
         response = self.client.post(
@@ -108,3 +111,84 @@ class LocationWorkspaceTests(TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "does not belong to this location")
+
+    def test_bulk_activate_deactivate_duplicate(self) -> None:
+        a = quick_add_service(self.footer, "A", "https://a.example.com")
+        b = quick_add_service(self.footer, "B", "https://b.example.com")
+        c = quick_add_service(self.footer, "C", "https://c.example.com")
+
+        self.client.post(
+            self.workspace_url,
+            {
+                "workspace_action": "bulk_deactivate",
+                "service_ids": [a.pk, b.pk],
+            },
+        )
+        a.refresh_from_db()
+        b.refresh_from_db()
+        self.assertFalse(a.active)
+        self.assertFalse(b.active)
+
+        self.client.post(
+            self.workspace_url,
+            {
+                "workspace_action": "bulk_activate",
+                "service_ids": [a.pk, b.pk],
+            },
+        )
+        a.refresh_from_db()
+        self.assertTrue(a.active)
+
+        before = Service.objects.filter(location=self.footer).count()
+        self.client.post(
+            self.workspace_url,
+            {
+                "workspace_action": "bulk_duplicate",
+                "service_ids": [a.pk, c.pk],
+            },
+        )
+        self.assertEqual(
+            Service.objects.filter(location=self.footer).count(),
+            before + 2,
+        )
+
+    def test_bulk_move_to_another_location(self) -> None:
+        header = make_location("header", name="Header")
+        a = quick_add_service(self.footer, "A", "https://a.example.com")
+        b = quick_add_service(self.footer, "B", "https://b.example.com")
+        response = self.client.post(
+            self.workspace_url,
+            {
+                "workspace_action": "bulk_move",
+                "service_ids": [a.pk, b.pk],
+                "target_location": header.pk,
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        a.refresh_from_db()
+        b.refresh_from_db()
+        self.assertEqual(a.location_id, header.pk)
+        self.assertEqual(b.location_id, header.pk)
+        self.assertEqual(Service.objects.filter(location=self.footer).count(), 0)
+
+    def test_bulk_requires_selection(self) -> None:
+        quick_add_service(self.footer, "A", "https://a.example.com")
+        response = self.client.post(
+            self.workspace_url,
+            {"workspace_action": "bulk_activate"},
+            follow=True,
+        )
+        self.assertContains(response, "Select at least one service")
+
+    def test_workspace_list_ui_includes_bulk_and_row_helpers(self) -> None:
+        service = quick_add_service(
+            self.footer, "Academy", "https://academy.example.com"
+        )
+        response = self.client.get(self.workspace_url)
+        self.assertContains(response, "With selected")
+        self.assertContains(response, 'name="service_ids"')
+        self.assertContains(response, "bulk_activate")
+        self.assertContains(response, "Copy URL")
+        self.assertContains(response, "eco-logo-fallback")
+        self.assertContains(response, 'data-copy="%s"' % service.url)
+        self.assertContains(response, "1 active")
