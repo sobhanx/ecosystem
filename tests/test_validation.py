@@ -10,15 +10,8 @@ from django.test import TestCase
 from ecosystem.forms import ServiceAdminForm, WorkspaceQuickAddForm
 from ecosystem.lookups import get_active_services
 from ecosystem.models import Location, Service
-
-
-def make_location(key: str, **kwargs) -> Location:
-    defaults = {
-        "name": kwargs.pop("name", key.replace("_", " ").title()),
-        "active": True,
-    }
-    defaults.update(kwargs)
-    return Location.objects.create(key=key, **defaults)
+from ecosystem.services import quick_add_service
+from tests.helpers import make_location
 
 
 class LocationValidationTests(TestCase):
@@ -125,12 +118,14 @@ class ServiceValidationTests(TestCase):
 class TemplateApiRegressionTests(TestCase):
     def setUp(self) -> None:
         self.footer = make_location("footer")
-        Service.objects.create(
-            name="Shop",
-            url="https://shop.example.com",
-            location=self.footer,
-            position=0,
-            active=True,
+        self.active_first = quick_add_service(
+            self.footer, "Shop", "https://shop.example.com"
+        )
+        self.inactive = quick_add_service(
+            self.footer, "Hidden", "https://hidden.example.com", active=False
+        )
+        self.active_second = quick_add_service(
+            self.footer, "Blog", "https://blog.example.com"
         )
 
     def test_ecosystem_tag_still_renders(self) -> None:
@@ -139,6 +134,9 @@ class TemplateApiRegressionTests(TestCase):
         ).render(Context())
         self.assertIn("Shop", rendered)
         self.assertIn("https://shop.example.com", rendered)
+        self.assertIn("Blog", rendered)
+        self.assertNotIn("Hidden", rendered)
+        self.assertNotIn("https://hidden.example.com", rendered)
 
     def test_missing_location_returns_empty(self) -> None:
         self.assertEqual(list(get_active_services("missing")), [])
@@ -147,3 +145,19 @@ class TemplateApiRegressionTests(TestCase):
         self.footer.active = False
         self.footer.save(update_fields=["active"])
         self.assertEqual(list(get_active_services("footer")), [])
+
+    def test_inactive_services_excluded(self) -> None:
+        services = list(get_active_services("footer"))
+        self.assertEqual(
+            [service.name for service in services],
+            ["Shop", "Blog"],
+        )
+
+    def test_ordering_follows_position(self) -> None:
+        services = list(get_active_services("footer"))
+        self.assertEqual(
+            [service.pk for service in services],
+            [self.active_first.pk, self.active_second.pk],
+        )
+        # Inactive service still occupies position 1 in the location list.
+        self.assertEqual([service.position for service in services], [0, 2])

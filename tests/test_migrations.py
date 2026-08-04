@@ -41,6 +41,35 @@ class LocationFKConversionLogicTests(TestCase):
         self.assertEqual(labels["footer"], "Site footer")
         self.assertEqual(labels["header"], "header")
 
+    def test_settings_location_labels_strip_and_skip_blank(self) -> None:
+        with self.settings(
+            ECOSYSTEM_LOCATIONS=[
+                ("  footer  ", "  Site footer  "),
+                ("", "ignored"),
+                "   ",
+                ("Header", "Top nav"),
+            ]
+        ):
+            labels = _migration_0004._settings_location_labels()
+        self.assertEqual(labels, {"footer": "Site footer", "Header": "Top nav"})
+
+    def test_legacy_key_normalization_preserves_case_and_skips_empty(self) -> None:
+        """
+        Document 0004 forwards behavior for legacy string locations.
+
+        Keys are stripped; empty/whitespace-only values are skipped; case is
+        preserved so ``Footer`` and ``footer`` remain distinct placements.
+        """
+        raw_values = [" footer ", "", None, "  ", "Footer", "footer"]
+        keys: dict[str, str] = {}
+        for raw in raw_values:
+            key = (raw or "").strip()
+            if not key:
+                continue
+            keys[key] = key
+        self.assertEqual(set(keys), {"footer", "Footer"})
+        self.assertNotEqual(keys["footer"], keys["Footer"])
+
     def test_dense_positions_match_upgrade_expectations(self) -> None:
         footer = Location.objects.create(key="footer", name="Footer")
         header = Location.objects.create(key="header", name="Header")

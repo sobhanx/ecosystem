@@ -6,6 +6,7 @@ import importlib.util
 import os
 import subprocess
 import sys
+import tarfile
 import tempfile
 import zipfile
 from pathlib import Path
@@ -31,7 +32,7 @@ REQUIRED_SOURCE_PATHS = (
     "locale/fa/LC_MESSAGES/django.mo",
 )
 
-REQUIRED_WHEEL_FRAGMENTS = (
+REQUIRED_PACKAGE_FRAGMENTS = (
     "ecosystem/__init__.py",
     "ecosystem/lookups.py",
     "ecosystem/services.py",
@@ -50,9 +51,39 @@ REQUIRED_WHEEL_FRAGMENTS = (
     "ecosystem/locale/fa/LC_MESSAGES/django.mo",
 )
 
+# Flat package layout: sdist stores package files at the project root.
+REQUIRED_SDIST_FRAGMENTS = (
+    "__init__.py",
+    "lookups.py",
+    "services.py",
+    "admin/__init__.py",
+    "admin/location.py",
+    "admin/service.py",
+    "admin/workspace.py",
+    "admin/helpers.py",
+    "migrations/0004_location_and_service_fk.py",
+    "migrations/0005_alter_service_ordering.py",
+    "templates/admin/ecosystem/location_workspace.html",
+    "templates/ecosystem/services.html",
+    "static/ecosystem/vendor/Sortable.min.js",
+    "static/ecosystem/workspace_sortable.js",
+    "static/ecosystem/admin_copy.js",
+    "locale/fa/LC_MESSAGES/django.mo",
+)
+
+
+def _assert_fragments(
+    testcase: SimpleTestCase,
+    names: set[str],
+    fragments: tuple[str, ...],
+    label: str,
+) -> None:
+    for fragment in fragments:
+        testcase.assertIn(fragment, names, f"missing {fragment} in {label}")
+
 
 class PackagingSmokeTests(SimpleTestCase):
-    """Assert source packaging inputs and built wheel contents."""
+    """Assert source packaging inputs and built wheel/sdist contents."""
 
     def test_source_tree_contains_packaged_assets(self) -> None:
         for relative in REQUIRED_SOURCE_PATHS:
@@ -88,12 +119,9 @@ class PackagingSmokeTests(SimpleTestCase):
 
             with zipfile.ZipFile(wheel_path) as archive:
                 names = set(archive.namelist())
-                for fragment in REQUIRED_WHEEL_FRAGMENTS:
-                    self.assertIn(
-                        fragment,
-                        names,
-                        f"missing {fragment} in {wheel_path.name}",
-                    )
+                _assert_fragments(
+                    self, names, REQUIRED_PACKAGE_FRAGMENTS, wheel_path.name
+                )
 
             install_root = outdir / "install"
             install_root.mkdir()
@@ -139,4 +167,80 @@ class PackagingSmokeTests(SimpleTestCase):
             )
             self.assertTrue(
                 (installed / "migrations" / "0004_location_and_service_fk.py").is_file()
+            )
+            self.assertTrue((installed / "admin" / "workspace.py").is_file())
+
+            check = subprocess.run(
+                [
+                    sys.executable,
+                    "-c",
+                    (
+                        "import django\n"
+                        "from django.conf import settings\n"
+                        "settings.configure(\n"
+                        "    INSTALLED_APPS=["
+                        "'django.contrib.contenttypes',"
+                        "'django.contrib.auth',"
+                        "'ecosystem'"
+                        "],\n"
+                        "    DATABASES={'default': {"
+                        "'ENGINE': 'django.db.backends.sqlite3',"
+                        "'NAME': ':memory:'"
+                        "}},\n"
+                        "    SECRET_KEY='packaging-check',\n"
+                        "    USE_TZ=True,\n"
+                        ")\n"
+                        "django.setup()\n"
+                        "from django.core.management import call_command\n"
+                        "call_command('check')\n"
+                        "import ecosystem\n"
+                        "assert ecosystem.__version__ == '2.1.0'\n"
+                    ),
+                ],
+                capture_output=True,
+                text=True,
+                check=False,
+                env={
+                    **os.environ,
+                    "PYTHONPATH": (
+                        str(install_root)
+                        + os.pathsep
+                        + os.environ.get("PYTHONPATH", "")
+                    ),
+                },
+            )
+            self.assertEqual(
+                check.returncode,
+                0,
+                f"installed package check failed:\n{check.stdout}\n{check.stderr}",
+            )
+
+    def test_sdist_contains_required_runtime_assets(self) -> None:
+        try:
+            from setuptools.build_meta import build_sdist
+        except ImportError:
+            self.skipTest("setuptools.build_meta is unavailable")
+
+        with tempfile.TemporaryDirectory() as tmp:
+            outdir = Path(tmp)
+            previous_cwd = Path.cwd()
+            try:
+                os.chdir(REPO_ROOT)
+                sdist_name = build_sdist(str(outdir))
+            finally:
+                os.chdir(previous_cwd)
+
+            sdist_path = outdir / sdist_name
+            self.assertTrue(sdist_path.is_file(), f"missing sdist {sdist_path}")
+            self.assertIn("2.1.0", sdist_path.name)
+
+            with tarfile.open(sdist_path, "r:gz") as archive:
+                names = set(archive.getnames())
+            # Sdist nests files under a top-level project directory.
+            flattened = {
+                "/".join(Path(name).parts[1:]) if Path(name).parts else name
+                for name in names
+            }
+            _assert_fragments(
+                self, flattened, REQUIRED_SDIST_FRAGMENTS, sdist_path.name
             )

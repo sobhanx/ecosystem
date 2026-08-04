@@ -11,36 +11,14 @@ from django.urls import reverse
 
 from ecosystem.admin import ServiceAdmin
 from ecosystem.forms import ServiceAdminForm
-from ecosystem.models import Location, Service
+from ecosystem.models import Service
 from ecosystem.services import (
     delete_service,
     delete_services,
     quick_add_service,
     reorder_services,
 )
-
-
-def make_location(key: str, **kwargs) -> Location:
-    defaults = {
-        "name": kwargs.pop("name", key.replace("_", " ").title()),
-        "active": True,
-    }
-    defaults.update(kwargs)
-    return Location.objects.create(key=key, **defaults)
-
-
-def assert_dense_positions(testcase: TestCase, location: Location) -> list[Service]:
-    """Assert services for ``location`` use positions ``0..n-1`` with no gaps."""
-    services = list(
-        Service.objects.filter(location=location).order_by("position", "pk")
-    )
-    positions = [service.position for service in services]
-    testcase.assertEqual(
-        positions,
-        list(range(len(services))),
-        f"Expected dense positions for {location.key!r}, got {positions}",
-    )
-    return services
+from tests.helpers import assert_dense_positions, make_location
 
 
 class DeleteOrderingTests(TestCase):
