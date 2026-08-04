@@ -20,6 +20,7 @@ class AppliedMigrationsTests(TestCase):
         applied = MigrationRecorder(connection).applied_migrations()
         self.assertIn(("ecosystem", "0004_location_and_service_fk"), applied)
         self.assertIn(("ecosystem", "0005_alter_service_ordering"), applied)
+        self.assertIn(("ecosystem", "0006_alter_field_help_texts"), applied)
 
 
 class LocationFKConversionLogicTests(TestCase):
@@ -117,9 +118,15 @@ class MigrationModuleTests(SimpleTestCase):
     def test_0004_and_0005_modules_import(self) -> None:
         m4 = _migration_0004
         m5 = importlib.import_module("ecosystem.migrations.0005_alter_service_ordering")
+        m6 = importlib.import_module("ecosystem.migrations.0006_alter_field_help_texts")
         self.assertTrue(hasattr(m4, "Migration"))
         self.assertTrue(hasattr(m5, "Migration"))
+        self.assertTrue(hasattr(m6, "Migration"))
         self.assertEqual(
             m4.Migration.dependencies,
             [("ecosystem", "0003_optimize_indexes_and_constraints")],
+        )
+        self.assertEqual(
+            m6.Migration.dependencies,
+            [("ecosystem", "0005_alter_service_ordering")],
         )

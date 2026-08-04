@@ -35,9 +35,9 @@ The package makes no assumptions about the host beyond standard Django settings
 Prefer an exact version pin from a freshly built wheel or your internal index:
 
 ```bash
-pip install ecosystem==2.1.0
+pip install ecosystem==2.2.0
 # or from a path / wheel file
-pip install /path/to/ecosystem-2.1.0-py3-none-any.whl
+pip install /path/to/ecosystem-2.2.0-py3-none-any.whl
 ```
 
 ```python

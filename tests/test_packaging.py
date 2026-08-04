@@ -24,6 +24,7 @@ REQUIRED_SOURCE_PATHS = (
     "admin/helpers.py",
     "migrations/0004_location_and_service_fk.py",
     "migrations/0005_alter_service_ordering.py",
+    "migrations/0006_alter_field_help_texts.py",
     "templates/admin/ecosystem/location_workspace.html",
     "templates/ecosystem/services.html",
     "static/ecosystem/vendor/Sortable.min.js",
@@ -43,6 +44,7 @@ REQUIRED_PACKAGE_FRAGMENTS = (
     "ecosystem/admin/helpers.py",
     "ecosystem/migrations/0004_location_and_service_fk.py",
     "ecosystem/migrations/0005_alter_service_ordering.py",
+    "ecosystem/migrations/0006_alter_field_help_texts.py",
     "ecosystem/templates/admin/ecosystem/location_workspace.html",
     "ecosystem/templates/ecosystem/services.html",
     "ecosystem/static/ecosystem/vendor/Sortable.min.js",
@@ -63,6 +65,7 @@ REQUIRED_SDIST_FRAGMENTS = (
     "admin/helpers.py",
     "migrations/0004_location_and_service_fk.py",
     "migrations/0005_alter_service_ordering.py",
+    "migrations/0006_alter_field_help_texts.py",
     "templates/admin/ecosystem/location_workspace.html",
     "templates/ecosystem/services.html",
     "static/ecosystem/vendor/Sortable.min.js",
@@ -96,7 +99,7 @@ class PackagingSmokeTests(SimpleTestCase):
         self.assertIsNotNone(importlib.util.find_spec("ecosystem.migrations"))
         import ecosystem
 
-        self.assertEqual(ecosystem.__version__, "2.1.0")
+        self.assertEqual(ecosystem.__version__, "2.2.0")
 
     def test_wheel_contains_required_runtime_assets(self) -> None:
         try:
@@ -115,7 +118,7 @@ class PackagingSmokeTests(SimpleTestCase):
 
             wheel_path = outdir / wheel_name
             self.assertTrue(wheel_path.is_file(), f"missing wheel {wheel_path}")
-            self.assertIn("2.1.0", wheel_path.name)
+            self.assertIn("2.2.0", wheel_path.name)
 
             with zipfile.ZipFile(wheel_path) as archive:
                 names = set(archive.namelist())
@@ -194,7 +197,7 @@ class PackagingSmokeTests(SimpleTestCase):
                         "from django.core.management import call_command\n"
                         "call_command('check')\n"
                         "import ecosystem\n"
-                        "assert ecosystem.__version__ == '2.1.0'\n"
+                        "assert ecosystem.__version__ == '2.2.0'\n"
                     ),
                 ],
                 capture_output=True,
@@ -232,7 +235,7 @@ class PackagingSmokeTests(SimpleTestCase):
 
             sdist_path = outdir / sdist_name
             self.assertTrue(sdist_path.is_file(), f"missing sdist {sdist_path}")
-            self.assertIn("2.1.0", sdist_path.name)
+            self.assertIn("2.2.0", sdist_path.name)
 
             with tarfile.open(sdist_path, "r:gz") as archive:
                 names = set(archive.getnames())

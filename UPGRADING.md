@@ -8,7 +8,7 @@ This package follows [Semantic Versioning](https://semver.org/):
 - **MINOR** — backward-compatible hardening and features
 - **PATCH** — backward-compatible bug fixes
 
-Pin hosts to an exact version (for example `ecosystem==2.1.0`) when installing
+Pin hosts to an exact version (for example `ecosystem==2.2.0`) when installing
 from an internal index or path. After each release, install from a freshly built
 wheel — do not reuse stale `dist/` artifacts from older checkouts.
 
@@ -31,16 +31,22 @@ Follow [DEVELOPMENT.md](DEVELOPMENT.md#release-process). Summary:
 
 ## 2.1.x → 2.2.0
 
-Backward-compatible documentation, Admin polish, validation, and test maturity
-release. No schema migrations.
+Backward-compatible documentation, Admin polish, validation, testing maturity,
+and Persian Admin localization release. Includes help-text-only migration
+`0006_alter_field_help_texts` (no data model shape change).
 
 ```bash
 pip install --upgrade ecosystem==2.2.0
+python manage.py migrate ecosystem
 python manage.py collectstatic  # if you collect app static files
 ```
 
 Template tag API is unchanged. Prefer the location workspace for day-to-day
 editing.
+
+For Persian Admin in a host project, set `LANGUAGE_CODE = "fa"`. Avoid enabling
+`LocaleMiddleware` if browser `Accept-Language` must not override Admin language
+(see `demo/README.md`).
 
 ## 2.0.x → 2.1.0
 
@@ -131,11 +137,12 @@ Create locations in Admin (or fixtures) explicitly.
 
 ### After upgrade checklist
 
-- [ ] Install a **2.1.x wheel** (not a stale 1.1.1 artifact)
-- [ ] `migrate ecosystem`
+- [ ] Install a **2.2.x wheel** (not a stale 2.1.0 / 1.1.1 artifact)
+- [ ] `migrate ecosystem` (applies `0006` help-text updates from 2.1)
 - [ ] `collectstatic` if applicable
 - [ ] Confirm Locations exist for each template key you use
 - [ ] Check key casing (`footer` vs `FOOTER`)
 - [ ] Open each location workspace and verify order
 - [ ] Spot-check `{% ecosystem "…" %}` on a staging page
+- [ ] If using Persian Admin, set `LANGUAGE_CODE = "fa"` and review LocaleMiddleware
 - [ ] Update any host code that assumed string `Service.location`

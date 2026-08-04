@@ -5,15 +5,17 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.2.0] — Unreleased
+## [2.2.0] — 2026-08-04
 
 ### Added
 
 - Maintainer guide (`DEVELOPMENT.md`) and bilingual README (English for
-  developers, Persian for the Admin product story).
+  developers, Persian product section for editors).
+- Demo laboratory guide (`demo/README.md`) with sample Header / Main / Footer
+  placements and Persian Admin activation notes.
 - Stronger packaging checks (sdist contents, clean-install Django check).
-- Broader regression coverage for permissions, ordering, validation, and the
-  public template tag.
+- Broader regression coverage for permissions, ordering, validation, Admin HTTP
+  language, and the public template tag.
 - Shared test helpers for dense position assertions.
 
 ### Changed
@@ -26,6 +28,8 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
   fallback feedback, friendlier reorder messages, light mobile layout.
 - Persian Admin terminology aligned for locations, services, order, and
   workspace labels.
+- Demo Admin language fixed to Persian via `LANGUAGE_CODE = "fa"` (no
+  `LocaleMiddleware`, so browser `Accept-Language` cannot override it).
 
 ### Fixed
 
@@ -33,12 +37,20 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 - Reorder and clipboard feedback no longer surface technical internals to
   editors.
 
+### Deprecated
+
+- Nothing.
+
 ### Migration notes
 
-- No new schema migrations in 2.2.0.
-- Hosts on 2.1.x: install the 2.2.0 wheel, run tests in staging, and
+- Migration `0006_alter_field_help_texts` updates field help text only (no schema
+  shape change).
+- Hosts on 2.1.x: install the 2.2.0 wheel, run `migrate ecosystem`, and
   `collectstatic` if you collect app static files.
 - Template tag API remains `{% ecosystem "key" %}`.
+- For Persian Admin in host projects, set `LANGUAGE_CODE = "fa"`. Prefer not
+  enabling `LocaleMiddleware` when Admin language must stay fixed regardless of
+  browser language preferences.
 
 ## [2.1.0] — 2026-08-04
 
